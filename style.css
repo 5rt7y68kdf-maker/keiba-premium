@@ -1,0 +1,146 @@
+body {
+    font-family: sans-serif;
+    background-color: #0a0a0a;
+    color: #dddddd;
+    margin: 0;
+    padding: 10px;
+    text-align: center;
+}
+
+.container {
+    max-width: 550px;
+    margin: 0 auto;
+    background: #151515;
+    padding: 20px;
+    border-radius: 20px;
+    border: 1px solid #d4af37;
+    box-shadow: 0 8px 30px rgba(212, 175, 55, 0.15);
+}
+
+h1 {
+    font-size: 1.4rem;
+    color: #d4af37;
+    margin: 0 0 15px 0;
+    font-weight: bold;
+}
+
+.subtitle {
+    text-align: center;
+    font-size: 0.8rem;
+    color: #aa8822;
+    margin-bottom: 20px;
+    font-weight: bold;
+}
+
+.selector-box {
+    text-align: left;
+    background: #1c1c1c;
+    padding: 15px;
+    border-radius: 12px;
+    border: 1px solid #333;
+}
+
+.select-input, .text-input {
+    width: 100%;
+    padding: 12px;
+    font-size: 1rem;
+    border-radius: 8px;
+    border: 1px solid #444;
+    background: #111;
+    color: #fff;
+    box-sizing: border-box;
+    margin-bottom: 15px;
+    text-align: center;
+    font-weight: bold;
+}
+
+.select-input {
+    -webkit-appearance: none;
+}
+
+.btn-predict {
+    width: 100%;
+    background: linear-gradient(135deg, #e53e3e 0%, #9b2c2c 100%);
+    color: white;
+    border: none;
+    padding: 14px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 4px 0 #5b1414;
+}
+
+.btn-predict:active {
+    transform: translateY(2px);
+    box-shadow: none;
+}
+
+.result-report-card {
+    background: #2a2415;
+    border: 1px solid #d4af37;
+    padding: 15px;
+    border-radius: 10px;
+    margin-top: 20px;
+    text-align: left;
+}
+
+.report-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.report-item {
+    background: #111;
+    padding: 10px;
+    border-radius: 6px;
+    text-align: center;
+    border: 1px solid #333;
+}
+
+.prediction-box {
+    background: #1c140c;
+    border: 2px solid #dc2626;
+    padding: 15px;
+    border-radius: 12px;
+    margin-top: 20px;
+    text-align: left;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+    margin-top: 5px;
+    color: #ddd;
+}
+
+th, td {
+    padding: 12px 4px;
+    border-bottom: 1px solid #333;
+    text-align: center;
+}
+
+th {
+    background-color: #222;
+    color: #d4af37;
+    font-weight: bold;
+}
+
+.badge-win {
+    background: #dc2626;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: bold;
+}
+
+.badge-place {
+    background: #319795;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: bold;
+}
