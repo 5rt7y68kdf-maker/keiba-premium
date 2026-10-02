@@ -1,4 +1,7 @@
-// 🌪️【JRA CSV出馬表＆ZIP全対応・完全自動レース検索エンジン app.js】
+// 🌪️【JRA 競馬AI出馬表プロ - 機能拡張1,2,3完全統合版 app.js】
+// 1. 表示項目の拡張（性齢・斤量・調教師・人気順・ヘダーサマリー）
+// 2. AI推奨印アルゴリズムの強化（◎本命〜△連下に加え、高配当を狙う「☆ 穴馬」・AI判定コメント動的生成）
+// 3. UI機能強化（「馬番順」「人気順」「AI注目順」の1タップソート切替 ＆ 1R〜12Rクイック選択ボタン）
 
 var VENUE_MAP = {
     "札幌": "01", "函館": "02", "福島": "03", "新潟": "04",
@@ -11,6 +14,11 @@ var VENUE_MAP = {
     "5": "東京", "6": "中山", "7": "中京", "8": "京都", "9": "阪神",
     "東": "東京", "中": "中山", "阪": "阪神", "京": "京都", "福": "福島", "新": "新潟", "札": "札幌", "函": "函館", "小": "小倉"
 };
+
+// 全局状態管理
+var currentSortMode = "num"; // 'num' | 'odds' | 'ai'
+var rawMatchedHorses = [];
+var currentRaceHeaderInfo = { venue: "", raceNum: 11, count: 0, dateStr: "" };
 
 function resolveVenueInfo(v) {
     if (!v) return { name: "", code: "", short: "" };
@@ -51,102 +59,50 @@ function findDomValue(idList) {
 }
 
 // --------------------------------------------------
-// CSV行から競馬場ブロック・馬データを抽出する解析関数
+// 1. CSV 行パース処理 (提案1: 詳細データ抽出対応)
 // --------------------------------------------------
-function parseCsvContent(text, venueName, raceNum) {
-    var lines = text.split(/\r?\n/);
-    var rows = [];
-    for (var i = 0; i < lines.length; i++) {
-        var line = lines[i].trim();
-        if (!line) continue;
-        var parts = line.split(",").map(function(p) { return p.replace(/^"|"$/g, "").trim(); });
-        if (parts.length >= 8 && parts[7]) {
-            rows.push(parts);
-        }
-    }
+function parseCsvRow(row, defaultWaku) {
+    if (!row || row.length < 13) return null;
 
-    if (rows.length === 0) return null;
+    var waku = parseInt(row[0], 10) || defaultWaku || 1;
+    var num = parseInt(row[2], 10) || 1;
+    var name = row[7] ? row[7].trim() : "";
+    var sex = row[9] ? row[9].trim() : "";
+    var age = row[10] ? row[10].trim() : "";
+    var jockey = row[12] ? row[12].trim() : "不明";
+    var kinryo = row[13] ? row[13].trim() : "";
+    var oddsStr = row[15] ? row[15].trim() : "";
+    var affiliation = row[16] ? row[16].trim() : "";
+    var trainer = row[17] ? row[17].trim() : "";
 
-    // レースブロックごとの分割 (馬番が1に戻ったタイミングで新規レース)
-    var races = [];
-    var currentRace = [];
-    var prevNum = 999;
+    if (!name || name === "競走馬名") return null;
 
-    for (var j = 0; j < rows.length; j++) {
-        var r = rows[j];
-        var num = parseInt(r[2], 10);
-        if (isNaN(num)) num = 0;
+    var odds = parseFloat(oddsStr);
+    if (isNaN(odds) || odds <= 0) odds = 0.0;
 
-        if (num <= prevNum && num === 1) {
-            if (currentRace.length > 0) races.push(currentRace);
-            currentRace = [];
-        }
-        currentRace.push(r);
-        prevNum = num;
-    }
-    if (currentRace.length > 0) races.push(currentRace);
-
-    if (races.length === 0) return null;
-
-    // 東日本(関東)競馬場 vs 西日本(関西)競馬場の判定
-    var kantoVenues = ["東京", "中山", "福島", "新潟", "札幌", "函館"];
-    var isKanto = false;
-    for (var k = 0; k < kantoVenues.length; k++) {
-        if (venueName.indexOf(kantoVenues[k]) !== -1) {
-            isKanto = true;
-            break;
-        }
-    }
-
-    var blockIndex = isKanto ? 0 : 1;
-    var targetIndex = blockIndex * 12 + (raceNum - 1);
-
-    if (targetIndex >= races.length) {
-        targetIndex = raceNum - 1;
-    }
-    if (targetIndex >= races.length) {
-        targetIndex = 0;
-    }
-
-    var selectedRace = races[targetIndex];
-    var horses = [];
-
-    for (var m = 0; m < selectedRace.length; m++) {
-        var row = selectedRace[m];
-        var waku = parseInt(row[0], 10) || 1;
-        var hNum = parseInt(row[2], 10) || (m + 1);
-        var name = row[7];
-        var jockey = row[12] || "不明";
-        var oddsVal = parseFloat(row[15]);
-        if (isNaN(oddsVal)) oddsVal = 0.0;
-
-        horses.push({
-            waku: waku,
-            num: hNum,
-            name: name,
-            jockey: jockey,
-            odds: oddsVal,
-            finishPos: "未確定"
-        });
-    }
-
-    return horses;
+    return {
+        waku: waku,
+        num: num,
+        name: name,
+        sexAge: (sex + age) || "-",
+        jockey: jockey,
+        kinryo: kinryo ? kinryo + "kg" : "-",
+        trainer: (affiliation + " " + trainer).trim() || "-",
+        odds: odds,
+        finishPos: "未確定"
+    };
 }
 
-// --------------------------------------------------
-// 万能 TXT データ解析関数 (バックアップ用)
-// --------------------------------------------------
-function parseUniversalRaceRow(line, rowIdx) {
+// テキスト行パース処理 (バックアップフォールバック)
+function parseTextRow(line, rowIdx) {
     if (!line) return null;
     var tokens = line.split(/[\s,\t|]+/).map(function(t) { return t.trim(); }).filter(Boolean);
     if (tokens.length < 3) return null;
 
     var lineStr = tokens.join(" ");
-    if (lineStr.indexOf("日付") !== -1 || lineStr.toLowerCase().indexOf("date") !== -1 || lineStr.indexOf("競走馬名") !== -1) {
-        return null;
-    }
+    if (lineStr.indexOf("日付") !== -1 || lineStr.indexOf("競走馬名") !== -1) return null;
 
-    var skipWords = ["ダート", "障害", "リステッド", "スプリンターズ", "フェブラリー", "エリザベス", "チャンピオンズ", "ホープフル", "マイル", "カップ", "レース", "サラ系", "未勝利", "新馬", "1勝クラス", "2勝クラス", "3勝クラス", "オープン", "G1", "G2", "G3"];
+    var skipWords = ["ダート", "障害", "リステッド", "スプリンターズ", "フェブラリー", "エリザベス", "チャンピオンズ", "ホープフル", "マイル", "カップ", "オープン", "G1", "G2", "G3"];
     var nameIdx = -1;
     var horseName = "";
 
@@ -173,9 +129,7 @@ function parseUniversalRaceRow(line, rowIdx) {
     for (var k = nameIdx - 1; k >= 0; k--) {
         if (/^\d{1,2}$/.test(tokens[k])) {
             var v = parseInt(tokens[k], 10);
-            if (v >= 1 && v <= 18) {
-                numsBefore.push(v);
-            }
+            if (v >= 1 && v <= 18) numsBefore.push(v);
         }
     }
 
@@ -191,187 +145,324 @@ function parseUniversalRaceRow(line, rowIdx) {
         waku = Math.min(8, Math.ceil((num + 1) / 2));
     }
 
-    if (waku < 1 || waku > 8) waku = Math.min(8, Math.ceil((num + 1) / 2));
-
     var odds = 0.0;
     for (var m = tokens.length - 1; m > nameIdx; m--) {
-        var rawTok = tokens[m];
-        if (rawTok.indexOf("着") !== -1) continue;
-        var tok = rawTok.replace("倍", "").replace("円", "").trim();
-        if (/^\([+-]?\d+\)$/.test(tok)) continue;
+        var tok = tokens[m].replace("倍", "").trim();
         if (/^\d{1,3}\.\d$/.test(tok)) {
             var f = parseFloat(tok);
             if (!isNaN(f) && f > 0) { odds = f; break; }
         }
     }
 
-    var finishPos = "未確定";
-    var mChak = lineStr.match(/(\d{1,2})着/);
-    if (mChak) {
-        finishPos = mChak[1] + "着";
-    }
-
-    return { waku: waku, num: num, name: horseName, jockey: jockey, odds: odds, finishPos: finishPos };
+    return {
+        waku: waku,
+        num: num,
+        name: horseName,
+        sexAge: "-",
+        jockey: jockey,
+        kinryo: "-",
+        trainer: "-",
+        odds: odds,
+        finishPos: "未確定"
+    };
 }
 
 // --------------------------------------------------
-// メインデータ照合・描画処理
+// 2. AIアルゴリズム判定処理 (提案2: 高度印付け & 穴馬☆検出 & AIコメント)
+// --------------------------------------------------
+function applyAiAnalysis(horses) {
+    if (!horses || horses.length === 0) return;
+
+    // 単勝オッズ順にソート（人気順判定）
+    var sortedByOdds = horses.slice().sort(function(a, b) {
+        var oA = a.odds > 0 ? a.odds : 9999;
+        var oB = b.odds > 0 ? b.odds : 9999;
+        return oA - oB;
+    });
+
+    for (var i = 0; i < horses.length; i++) {
+        var h = horses[i];
+        var rank = sortedByOdds.indexOf(h) + 1; // 1人気〜
+        h.popularityRank = (h.odds > 0) ? rank : "-";
+
+        if (h.odds > 0) {
+            if (rank === 1) {
+                h.aiMark = '<span style="color:#dc2626;font-weight:bold;">◎ 本命</span>';
+                h.aiNote = '<span style="background:#fee2e2;color:#991b1b;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:bold;">🏆 勝率本命・主力級</span>';
+            } else if (rank === 2) {
+                h.aiMark = '<span style="color:#2563eb;font-weight:bold;">○ 対抗</span>';
+                h.aiNote = '<span style="background:#dbeafe;color:#1e40af;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:bold;">🥈 対抗筆頭・高信頼</span>';
+            } else if (rank === 3) {
+                h.aiMark = '<span style="color:#d97706;font-weight:bold;">▲ 単穴</span>';
+                h.aiNote = '<span style="background:#fef3c7;color:#92400e;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:bold;">🥉 単穴一転・好気配</span>';
+            } else if (rank === 4 || rank === 5) {
+                h.aiMark = '<span style="color:#059669;font-weight:bold;">△ 連下</span>';
+                h.aiNote = '<span style="background:#d1fae5;color:#065f46;padding:2px 6px;border-radius:4px;font-size:11px;">連下押さえ候補</span>';
+            } else if (h.odds >= 15.0 && h.odds <= 60.0 && /ルメール|川田|武豊|横山武|坂井|松山|戸崎|岩田|デム/.test(h.jockey)) {
+                // 鞍上強力＋オッズ15〜60倍 ＝ 「☆ 穴馬」
+                h.aiMark = '<span style="color:#7c3aed;font-weight:bold;">☆ 穴馬</span>';
+                h.aiNote = '<span style="background:#ede9fe;color:#5b21b6;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:bold;">🔥 注目穴馬・高配当狙い</span>';
+            } else {
+                h.aiMark = "-";
+                h.aiNote = "";
+            }
+        } else {
+            h.aiMark = "-";
+            h.aiNote = "";
+        }
+    }
+}
+
+// --------------------------------------------------
+// 3. 画面描画 & UIコントロール構造 (提案3: ワンタップソート & レース切替UI)
+// --------------------------------------------------
+function renderRaceTable() {
+    var tbody = findDomElement(["predict-tbody", "predict_tbody", "result-tbody", "tbody"]);
+    if (!tbody || !rawMatchedHorses || rawMatchedHorses.length === 0) return;
+
+    var displayHorses = rawMatchedHorses.slice();
+
+    // ソート処理
+    if (currentSortMode === "odds") {
+        displayHorses.sort(function(a, b) {
+            var oA = a.odds > 0 ? a.odds : 9999;
+            var oB = b.odds > 0 ? b.odds : 9999;
+            return oA - oB;
+        });
+    } else if (currentSortMode === "ai") {
+        var markPriority = { "◎ 本命": 1, "○ 対抗": 2, "▲ 単穴": 3, "☆ 穴馬": 4, "△ 連下": 5, "-": 6 };
+        displayHorses.sort(function(a, b) {
+            var pA = markPriority[a.aiMark.replace(/<[^>]+>/g, "")] || 6;
+            var pB = markPriority[b.aiMark.replace(/<[^>]+>/g, "")] || 6;
+            if (pA !== pB) return pA - pB;
+            return a.num - b.num;
+        });
+    } else {
+        // デフォルト: 馬番順
+        displayHorses.sort(function(a, b) { return a.num - b.num; });
+    }
+
+    var html = "";
+    for (var j = 0; j < displayHorses.length; j++) {
+        var h = displayHorses[j];
+        var oddsDisp = (h.odds > 0) ? "<b>" + h.odds + "倍</b> <span style=\"color:#6b7280;font-size:12px;\">(" + h.popularityRank + "人気)</span>" : "<span style=\"color:#9ca3af;\">未確定</span>";
+
+        html += "<tr>" +
+                "<td style=\"text-align:center;\"><b>" + h.waku + "枠" + h.num + "番</b></td>" +
+                "<td style=\"text-align:center;\">" + h.aiMark + "</td>" +
+                "<td><b>" + h.name + "</b> <span style=\"color:#6b7280;font-size:12px;\">(" + h.sexAge + ")</span>" + (h.aiNote ? "<br>" + h.aiNote : "") + "</td>" +
+                "<td><b>" + h.jockey + "</b> <span style=\"color:#4b5563;font-size:12px;\">(" + h.kinryo + ")</span></td>" +
+                "<td><small style=\"color:#6b7280;\">" + h.trainer + "</small></td>" +
+                "<td style=\"text-align:right;\">" + oddsDisp + "</td>" +
+                "<td style=\"text-align:center;\">" + h.finishPos + "</td>" +
+                "</tr>";
+    }
+
+    tbody.innerHTML = html;
+}
+
+// UI拡張エリアの埋め込み (ワンタップ切替コントロール)
+function injectUiControls(currentRaceNum) {
+    var container = findDomElement(["ui-controls-area", "predict-controls", "race-controls"]);
+    if (!container) {
+        var tbody = findDomElement(["predict-tbody", "predict_tbody", "result-tbody", "tbody"]);
+        if (tbody && tbody.parentElement) {
+            var parent = tbody.parentElement;
+            container = document.createElement("div");
+            container.id = "ui-controls-area";
+            container.style.cssText = "margin: 12px 0; padding: 14px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);";
+            parent.parentElement.insertBefore(container, parent);
+        }
+    }
+
+    if (!container) return;
+
+    var btnStyle = "padding:6px 14px; margin-right:6px; margin-bottom:6px; border:1px solid #cbd5e1; background:#ffffff; border-radius:6px; cursor:pointer; font-size:13px; font-weight:600; color:#334155; transition:all 0.15s ease;";
+    var activeBtnStyle = "padding:6px 14px; margin-right:6px; margin-bottom:6px; border:1px solid #2563eb; background:#2563eb; color:#ffffff; border-radius:6px; cursor:pointer; font-size:13px; font-weight:700; box-shadow: 0 2px 4px rgba(37,99,235,0.25);";
+
+    var html = '<div style="margin-bottom:8px; font-size:14px; font-weight:bold; color:#1e293b; display:flex; align-items:center; gap:8px;">';
+    html += '<span>📊 レースサマリー:</span> <span style="color:#2563eb;">' + (currentRaceHeaderInfo.venue || "") + " " + currentRaceNum + 'R</span> <span style="color:#64748b; font-size:13px; font-weight:normal;">(' + rawMatchedHorses.length + '頭立)</span>';
+    html += '</div>';
+
+    html += '<div style="margin-bottom:10px; display:flex; flex-wrap:wrap; align-items:center; gap:6px;">';
+    html += '<span style="font-size:13px; font-weight:bold; color:#475569; margin-right:4px;">🔀 並び替え:</span> ';
+    html += '<button id="sort-btn-num" style="' + (currentSortMode === "num" ? activeBtnStyle : btnStyle) + '">🔢 馬番順</button>';
+    html += '<button id="sort-btn-odds" style="' + (currentSortMode === "odds" ? activeBtnStyle : btnStyle) + '">🏆 人気順</button>';
+    html += '<button id="sort-btn-ai" style="' + (currentSortMode === "ai" ? activeBtnStyle : btnStyle) + '">🎯 AI注目順</button>';
+    html += '</div>';
+
+    html += '<div style="display:flex; flex-wrap:wrap; align-items:center; gap:4px;">';
+    html += '<span style="font-size:13px; font-weight:bold; color:#475569; margin-right:4px;">🏇 レース切替:</span> ';
+    for (var r = 1; r <= 12; r++) {
+        var isCur = (r === currentRaceNum);
+        html += '<button class="race-quick-btn" data-race="' + r + '" style="' + (isCur ? activeBtnStyle : btnStyle) + '">' + r + 'R</button>';
+    }
+    html += '</div>';
+
+    container.innerHTML = html;
+
+    // ソートボタンイベントのバインド
+    var bNum = document.getElementById("sort-btn-num");
+    var bOdds = document.getElementById("sort-btn-odds");
+    var bAi = document.getElementById("sort-btn-ai");
+
+    if (bNum) bNum.onclick = function() { currentSortMode = "num"; injectUiControls(currentRaceNum); renderRaceTable(); };
+    if (bOdds) bOdds.onclick = function() { currentSortMode = "odds"; injectUiControls(currentRaceNum); renderRaceTable(); };
+    if (bAi) bAi.onclick = function() { currentSortMode = "ai"; injectUiControls(currentRaceNum); renderRaceTable(); };
+
+    // レース選択クイックボタンのバインド
+    var qBtns = container.getElementsByClassName("race-quick-btn");
+    for (var k = 0; k < qBtns.length; k++) {
+        qBtns[k].onclick = function() {
+            var selectedR = parseInt(this.getAttribute("data-race"), 10);
+            var raceInput = findDomElement(["sim-race", "sim_race", "race", "race-num", "race_num"]);
+            if (raceInput) raceInput.value = selectedR;
+            loadAndUnzipJraDatabase();
+        };
+    }
+}
+
+// --------------------------------------------------
+// メイン処理 (CSV・ZIP 統括読み込み)
 // --------------------------------------------------
 function loadAndUnzipJraDatabase() {
-    alert("➔ [1/7] [ボタン押下成功] 正常にプログラムが作動しました！");
-
     var rawDate = findDomValue(["sim-date", "sim_date", "date", "race-date", "race_date"]);
     var rawVenue = findDomValue(["sim-venue", "sim_venue", "venue", "race-venue", "race_venue"]);
     var rawRace = findDomValue(["sim-race", "sim_race", "race", "race-num", "race_num"]);
     var btn = findDomElement(["predict-btn", "predict_btn", "btn-predict", "submit-btn"]);
-    var tbody = findDomElement(["predict-tbody", "predict_tbody", "result-tbody", "tbody"]);
 
-    if (!rawDate) { alert("❌ 日付を選択してください"); return; }
+    if (!rawDate) {
+        alert("❌ 日付を選択してください");
+        return;
+    }
 
     var cG = normalizeDate(rawDate);
     var tVenue = resolveVenueInfo(rawVenue);
-    var cR = normalizeRaceNum(rawRace);
+    var cR = normalizeRaceNum(rawRace) || 11;
 
-    if (btn) btn.innerText = "⚡ CSV / データ照合中...";
+    if (btn) btn.innerText = "⚡ データ自動解析中...";
 
-    var date6 = cG.length === 8 ? cG.substring(2) : cG;
-    var possibleCsvUrls = [
-        "DG" + date6 + ".CSV",
-        "DG" + date6 + ".csv",
-        "DG" + cG + ".CSV",
-        "DG" + cG + ".csv"
-    ];
+    currentRaceHeaderInfo = { venue: tVenue.name || rawVenue, raceNum: cR, count: 0, dateStr: cG };
 
-    function renderHorses(matched_horses) {
-        if (!matched_horses || matched_horses.length === 0) return;
+    var csvName = "DG" + cG.substring(2) + ".CSV";
 
-        // 人気順(オッズ順)によるAI推奨印の動的計算
-        var sortedByOdds = matched_horses.slice().sort(function(a, b) {
-            return (a.odds > 0 ? a.odds : 9999) - (b.odds > 0 ? b.odds : 9999);
-        });
+    fetch(csvName, { method: "GET", cache: "no-cache" })
+        .then(function(res) {
+            if (!res.ok) throw new Error("CSVなし");
+            return res.arrayBuffer();
+        })
+        .then(function(buffer) {
+            var decoder = new TextDecoder("shift_jis");
+            var text = decoder.decode(buffer);
+            processCsvContent(text, tVenue, cR, btn);
+        })
+        .catch(function() {
+            var targetZip = "racedata.zip";
+            fetch(targetZip, { method: "GET", cache: "no-cache" })
+                .then(function(res) {
+                    if (!res.ok) throw new Error("ZIP取得失敗");
+                    return res.arrayBuffer();
+                })
+                .then(async function(buffer) {
+                    if (typeof JSZip === "undefined") return;
+                    var zip = await JSZip.loadAsync(buffer);
+                    var file = null;
+                    zip.forEach(function (relativePath, zipEntry) {
+                        if (relativePath.toLowerCase().indexOf(".txt") !== -1 && !file) file = zipEntry;
+                    });
 
-        for (var k = 0; k < matched_horses.length; k++) {
-            var hObj = matched_horses[k];
-            var rank = sortedByOdds.indexOf(hObj);
-
-            if (rank === 0 && hObj.odds > 0) hObj.aiMark = "<span style=\"color:#dc2626;font-weight:bold;\">◎ 本命</span>";
-            else if (rank === 1 && hObj.odds > 0) hObj.aiMark = "<span style=\"color:#2563eb;font-weight:bold;\">○ 対抗</span>";
-            else if (rank === 2 && hObj.odds > 0) hObj.aiMark = "<span style=\"color:#d97706;font-weight:bold;\">▲ 単穴</span>";
-            else if ((rank === 3 || rank === 4) && hObj.odds > 0) hObj.aiMark = "<span style=\"color:#059669;\">△ 連下</span>";
-            else hObj.aiMark = "-";
-        }
-
-        matched_horses.sort(function(a, b) { return a.num - b.num; });
-
-        var html = "";
-        for (var j = 0; j < matched_horses.length; j++) {
-            var h = matched_horses[j];
-            var odds_disp = (h.odds > 0) ? h.odds + "倍" : "未確定";
-
-            html += "<tr>" +
-                    "<td>" + h.waku + "枠" + h.num + "番</td>" +
-                    "<td>" + h.aiMark + "</td>" +
-                    "<td><b>" + h.name + "</b></td>" +
-                    "<td>" + h.jockey + "</td>" +
-                    "<td>" + odds_disp + "</td>" +
-                    "<td>" + h.finishPos + "</td>" +
-                    "</tr>";
-        }
-
-        if (tbody) tbody.innerHTML = html;
-        alert("🏆 【データ検索成功】 出馬表 " + matched_horses.length + "頭の表示に成功しました！");
-        if (btn) btn.innerText = "🧠 指定レースのデータ検索を実行";
-    }
-
-    // CSVからの優先取得試行
-    function tryFetchCsv(idx) {
-        if (idx >= possibleCsvUrls.length) {
-            fallbackToZip();
-            return;
-        }
-
-        var csvUrl = possibleCsvUrls[idx];
-        fetch(csvUrl, { method: "GET", cache: "no-cache" })
-            .then(function(res) {
-                if (!res.ok) {
-                    tryFetchCsv(idx + 1);
-                    return null;
-                }
-                return res.arrayBuffer();
-            })
-            .then(function(buffer) {
-                if (!buffer) return;
-                var decoder = new TextDecoder("shift_jis");
-                var text = decoder.decode(buffer);
-                var horses = parseCsvContent(text, tVenue.name || rawVenue, cR || 11);
-
-                if (horses && horses.length > 0) {
-                    renderHorses(horses);
-                } else {
-                    tryFetchCsv(idx + 1);
-                }
-            })
-            .catch(function() {
-                tryFetchCsv(idx + 1);
-            });
-    }
-
-    // ZIP / TXT データベースへのフォールバック処理
-    function fallbackToZip() {
-        var target_zip_url = "racedata.zip";
-        fetch(target_zip_url, { method: "GET", cache: "no-cache" })
-            .then(function(response) {
-                if (!response.ok) throw new Error("ZIPファイル取得失敗");
-                return response.arrayBuffer();
-            })
-            .then(async function(buffer) {
-                if (typeof JSZip === "undefined") return;
-                var zip = await JSZip.loadAsync(buffer);
-                var file = null;
-
-                zip.forEach(function (relativePath, zipEntry) {
-                    if (relativePath.toLowerCase().indexOf(".txt") !== -1 && !file) file = zipEntry;
-                });
-
-                if (!file) return;
-
-                var textBuffer = await file.async("arraybuffer");
-                var decoder = new TextDecoder("shift_jis");
-                var text = decoder.decode(textBuffer);
-                var allLines = text.split("\n");
-
-                var matched_horses = [];
-                var validRowCounter = 0;
-
-                for (var i = 0; i < allLines.length; i++) {
-                    var line = allLines[i].trim();
-                    if (!line) continue;
-
-                    var parsed = parseUniversalRaceRow(line, validRowCounter);
-                    if (!parsed) continue;
-
-                    var dateMatch = (!cG || line.indexOf(cG) !== -1 || line.indexOf(cG.substring(2)) !== -1);
-                    var venueMatch = (!tVenue.name || line.indexOf(tVenue.name) !== -1 || (tVenue.short && line.indexOf(tVenue.short) !== -1) || (tVenue.code && line.indexOf(tVenue.code) !== -1));
-                    var raceMatch = (!cR || line.indexOf(cR + "R") !== -1 || line.indexOf(" " + cR + " ") !== -1 || line.indexOf("第" + cR) !== -1 || (cR === 11 && (line.indexOf("G1") !== -1 || line.indexOf("G2") !== -1 || line.indexOf("G3") !== -1)) || allLines.length <= 30);
-
-                    if (dateMatch && venueMatch && raceMatch) {
-                        matched_horses.push(parsed);
-                        validRowCounter++;
-                    }
-                }
-
-                if (matched_horses.length > 0) {
-                    renderHorses(matched_horses);
-                } else {
-                    alert("❌ 該当する馬データが見つかりませんでした。");
+                    if (!file) return;
+                    var textBuffer = await file.async("arraybuffer");
+                    var decoder = new TextDecoder("shift_jis");
+                    var text = decoder.decode(textBuffer);
+                    processTextContent(text, cG, tVenue, cR, btn);
+                })
+                .catch(function(err) {
+                    alert("❌ 読み込み失敗: " + err.message);
                     if (btn) btn.innerText = "🧠 指定レースのデータ検索を実行";
-                }
-            })
-            .catch(function(err) {
-                alert("❌ 処理クラッシュ停止:\n" + err.message);
-                if (btn) btn.innerText = "🧠 指定レースのデータ検索を実行";
-            });
+                });
+        });
+}
+
+function processCsvContent(text, tVenue, cR, btn) {
+    var lines = text.split(/\r?\n/);
+    var allRows = [];
+
+    for (var i = 0; i < lines.length; i++) {
+        if (!lines[i].trim()) continue;
+        var parts = lines[i].split(",").map(function(s) { return s.replace(/^"|"$/g, "").trim(); });
+        allRows.push(parts);
     }
 
-    tryFetchCsv(0);
+    var blockIndex = (tVenue.name === "中山" || tVenue.name === "東京" || tVenue.name === "福島" || tVenue.name === "新潟" || tVenue.name === "札幌" || tVenue.name === "函館") ? 0 : 1;
+    
+    var raceMap = {};
+    var currentRace = 1;
+    var prevNum = 0;
+
+    for (var j = 0; j < allRows.length; j++) {
+        var row = allRows[j];
+        if (row.length < 13) continue;
+
+        var num = parseInt(row[2], 10) || 0;
+        var waku = parseInt(row[0], 10) || 1;
+
+        if (num === 1 && prevNum > 1) {
+            currentRace++;
+        }
+
+        if (!raceMap[currentRace]) raceMap[currentRace] = [];
+        var parsed = parseCsvRow(row, waku);
+        if (parsed) raceMap[currentRace].push(parsed);
+
+        prevNum = num;
+    }
+
+    var targetRaceKey = (blockIndex === 1 && raceMap[cR + 12]) ? (cR + 12) : cR;
+    rawMatchedHorses = raceMap[targetRaceKey] || raceMap[cR] || [];
+
+    if (rawMatchedHorses.length === 0) {
+        alert("❌ 対象レースの馬データが見つかりませんでした。");
+        if (btn) btn.innerText = "🧠 指定レースのデータ検索を実行";
+        return;
+    }
+
+    applyAiAnalysis(rawMatchedHorses);
+    injectUiControls(cR);
+    renderRaceTable();
+
+    if (btn) btn.innerText = "🧠 指定レースのデータ検索を実行";
+}
+
+function processTextContent(text, cG, tVenue, cR, btn) {
+    var lines = text.split(/\r?\n/);
+    rawMatchedHorses = [];
+
+    for (var i = 0; i < lines.length; i++) {
+        var line = lines[i].trim();
+        if (!line) continue;
+
+        var parsed = parseTextRow(line, rawMatchedHorses.length);
+        if (!parsed) continue;
+
+        var dateMatch = (!cG || line.indexOf(cG) !== -1 || line.indexOf(cG.substring(2)) !== -1);
+        var venueMatch = (!tVenue.name || line.indexOf(tVenue.name) !== -1 || (tVenue.short && line.indexOf(tVenue.short) !== -1));
+        var raceMatch = (!cR || line.indexOf(cR + "R") !== -1 || line.indexOf(" " + cR + " ") !== -1 || lines.length <= 30);
+
+        if (dateMatch && venueMatch && raceMatch) {
+            rawMatchedHorses.push(parsed);
+        }
+    }
+
+    if (rawMatchedHorses.length === 0) {
+        alert("❌ データが見つかりませんでした。");
+        if (btn) btn.innerText = "🧠 指定レースのデータ検索を実行";
+        return;
+    }
+
+    applyAiAnalysis(rawMatchedHorses);
+    injectUiControls(cR);
+    renderRaceTable();
+
+    if (btn) btn.innerText = "🧠 指定レースのデータ検索を実行";
 }
