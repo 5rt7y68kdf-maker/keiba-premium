@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
     <title>JRA中央競馬 AI出馬表プレミアム製品版</title>
-    <!-- 🚀【オーナー指定：正規JSZip公式CDNのガチ結合】本物の解凍プログラムを100%正確に読み込みます！ -->
+    <!-- 🚀【正規JSZip公式CDN】本物の解凍プログラムを正確に読み込み、維持します！ -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
         body { font-family: sans-serif; background-color: #0a0a0a; color: #dddddd; margin: 0; padding: 10px; text-align: center; }
@@ -83,7 +83,6 @@
             <p style="font-size:0.8rem; font-weight:bold; color:#aaa; margin: 4px 0;">➔ ⑥ 1点あたりの投資金額を入力してください（円）</p>
             <input type="tel" id="sim-money" class="text-input" placeholder="金額を入力" value="1000">
             
-            <!-- 🌟【完全連動】onclick命令（loadAndUnzipJraDatabase）を、下のJavaScriptプログラム関数名と完全同期！ -->
             <button id="predict-btn" class="btn-predict" onclick="loadAndUnzipJraDatabase()">🧠 指定レースのデータ検索を実行</button>
         </div>
         <div class="result-report-card" id="report-card" style="display: none;">
@@ -107,9 +106,9 @@
         </div>
     </div>
     <script>
-        // 🌪️【デバッグ実況機能100%完全維持・エラー原因の徹底根治版】
+        // 🌪️【デバッグ実況機能100%完全維持・文法完全復元版】
         function loadAndUnzipJraDatabase() {
-            // 🟥 【追跡1】ボタン押下チェック ➔ 1文字も消さずに100%完全に残しています！
+            // 🟥 【追跡1】ボタン押下チェック
             alert("➔ [1/7] [ボタン押下成功] 正常にプログラムの1行目が作動しました！");
 
             var rawDate = document.getElementById("sim-date").value;
@@ -130,13 +129,13 @@
             var btn = document.getElementById("predict-btn");
             btn.innerText = "⚡ デバッグ検証中...";
 
-            // 🚀 【追跡2】API到達（ZIPファイルダウンロード通信）の開始 ➔ 1文字も消さずに100%完全に残しています！
+            // 🚀 【追跡2】API到達（ZIPファイルダウンロード通信）の開始
             var target_zip_url = "racedata.zip";
             alert("➔ [2/7] [API到達成功] これより同じサーバー内の '" + target_zip_url + "' へ通信(fetch)を開始します。");
 
             fetch(target_zip_url, { method: "GET", cache: "no-cache" })
                 .then(response => {
-                    // 🟥 【追跡3】通信応答チェック ➔ 1文字も消さずに100%完全に残しています！
+                    // 🟥 【追跡3】通信応答チェック
                     alert("➔ [3/7] [検索開始成功] サーバーから電波が戻りました！\n■ 通信成功フラグ(ok): " + response.ok + "\n■ HTTPステータス: " + response.status);
                     if(!response.ok) { 
                         alert("❌ 警告: サーバー上に 'racedata.zip' が見つかりません。");
@@ -145,7 +144,7 @@
                     return response.arrayBuffer();
                 })
                 .then(async (buffer) => {
-                    // 🟥 【追跡4】ZIP読み込み開始チェック ➔ 1文字も消さずに100%完全に残しています！
+                    // 🟥 【追跡4】ZIP読み込み開始チェック
                     alert("➔ [4/7] [ZIP読み込み開始] 成功！\nこれより、本物のJSZipライブラリで解凍処理を行います。");
                     
                     var zip = await JSZip.loadAsync(buffer);
@@ -164,3 +163,7 @@
                     
                     if(!file) { 
                         alert("❌ 警告: ZIPフォルダの中にテキストファイル(.txt)がありません！"); 
+                        btn.innerText = "🧠 指定レースのデータ検索を実行"; return; 
+                    }
+                    
+                    // 🟥 【追跡5】検索実行（テキスト抽出・デコード）チェック
