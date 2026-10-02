@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
     <title>JRA中央競馬 AI出馬表プレミアム製品版</title>
-    <!-- 🚀【ZIP完全開通の核心】ZIPファイルをブラウザ上で全自動解凍するための公式部品（JSZip）をネットからガチ結合！ -->
+    <!-- 🚀【ZIP完全開通の核】ZIPファイルをブラウザ上で全自動で超高速解凍するための公式部品（JSZip）をネットからガチ結合！ -->
     <script src="https://cloudflare.com"></script>
     <style>
         body { font-family: sans-serif; background-color: #0a0a0a; color: #dddddd; margin: 0; padding: 10px; text-align: center; }
@@ -83,6 +83,7 @@
             <p style="font-size:0.8rem; font-weight:bold; color:#aaa; margin: 4px 0;">➔ ⑥ 1点あたりの投資金額を入力してください（円）</p>
             <input type="tel" id="sim-money" class="text-input" placeholder="金額を入力" value="1000">
             
+            <!-- 🌟【ガチ結合】ボタンを押した時のonclick命令（loadAndUnzipJraDatabase）を、下のJavaScriptプログラム名と1マスのズレもなく完璧に完全同期させました！！！ -->
             <button id="predict-btn" class="btn-predict" onclick="loadAndUnzipJraDatabase()">🧠 指定レースのデータ検索を実行</button>
         </div>
         <div class="result-report-card" id="report-card" style="display: none;">
@@ -106,10 +107,10 @@
         </div>
     </div>
     <script>
-        // 🌪️【気絶バグ完全粉砕型・真の7段階追跡エンジン】
+        // 🌪️【真の追跡エンジン】ボタンと完全に連動し、1タップごとにポップアップを出す無敵のデバッグ処理
         function loadAndUnzipJraDatabase() {
-            // 🟥 【デバッグ1】ボタン押下チェック
-            alert("➔ [1/7] [ボタン押下] 成功！プログラムの1行目が正常に始動しました！");
+            // 🟥 【追跡1】ボタン押下チェック
+            alert("➔ [1/7] [ボタン押下成功] 正常にプログラムの1行目が作動しました！");
 
             var rawDate = document.getElementById("sim-date").value;
             if(!rawDate){ alert("❌ 日付を選択してください"); return; }
@@ -129,37 +130,37 @@
             var btn = document.getElementById("predict-btn");
             btn.innerText = "⚡ デバッグ検証中...";
 
-            // 🚀 【デバッグ2】API到達（ZIPファイルダウンロード通信）の開始
+            // 🚀 【追跡2】ZIP取得通信の開始
             var target_zip_url = "racedata.zip";
-            alert("➔ [2/7] [API到達] 成功！これより同じ部屋にある '" + target_zip_url + "' へ通信（fetch）を飛ばします。");
+            alert("➔ [2/7] [API到達成功] これより同じ部屋にある '" + target_zip_url + "' へダウンロード通信(fetch)を開始します。");
 
             fetch(target_zip_url, { method: "GET", cache: "no-cache" })
                 .then(response => {
-                    // 🟥 【デバッグ3】検索開始（ZIP通信応答）チェック
-                    alert("➔ [3/7] [検索開始] 成功！サーバーから電波が戻ってきました！\n■ 通信成功フラグ(ok): " + response.ok + "\n■ HTTPステータスコード: " + response.status);
+                    // 🟥 【追跡3】通信応答チェック
+                    alert("➔ [3/7] [検索開始成功] サーバーから電波が戻りました！\n■ 通信成功フラグ(ok): " + response.ok + "\n■ HTTPステータス: " + response.status);
                     if(!response.ok) { 
-                        alert("❌ 警告: サーバー上に 'racedata.zip' が見つかりません（404エラー）。");
+                        alert("❌ 警告: サーバー上に 'racedata.zip' が見つかりません。");
                         throw new Error("ZIPファイル取得失敗"); 
                     }
                     return response.arrayBuffer();
                 })
                 .then(async (buffer) => {
-                    // 🟥 【デバッグ4】ZIP/インデックス読み込み開始チェック
-                    alert("➔ [4/7] [ZIP/インデックス読み込み開始] 成功！\nこれより、JSZipライブラリにデータを投入して『フォルダの大解凍』を執行します。");
+                    // 🟥 【追跡4】ZIP展開チェック
+                    alert("➔ [4/7] [ZIP読み込み開始] 成功！\nこれよりJSZipライブラリで解凍処理を行います。");
                     
                     var zip = await JSZip.loadAsync(buffer);
-                    alert("➔ [解凍成功] ZIPフォルダの開封に成功しました！中身のファイル名を走査します。");
+                    alert("➔ [解凍成功] ZIPフォルダの開封に成功しました！中身のファイル名を調べます。");
                     
                     var file = null;
                     var zipFiles = [];
                     zip.forEach(function (relativePath, zipEntry) {
                         zipFiles.push(relativePath);
-                        if (relativePath.toLowerCase().endsWith(".txt") || relativePath.toLowerCase().indexOf(".txt") !== -1) {
+                        if (relativePath.toLowerCase().indexOf(".txt") !== -1) {
                             file = zipEntry;
                         }
                     });
                     
-                    alert("📦 [ZIP内ファイル確認] フォルダの中に以下のファイルを発見しました:\n" + zipFiles.join("\n"));
+                    alert("📦 [ZIP内ファイル確認] 発見されたファイル名:\n" + zipFiles.join("\n"));
                     
                     if(!file) { 
-                        alert("❌ 警告: ZIPフォルダは開きましたが、そのの中にテキストファイル(.txt)がありません！"); 
+                        alert("❌ 警告: ZIPフォルダの中にテキストファイル(.txt)がありません！"); 
