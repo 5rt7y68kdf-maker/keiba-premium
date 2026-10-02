@@ -1,4 +1,4 @@
-// 🌪️【KUINA AI RACING ANALYTICS - 高精度競走馬分析＆展開予測エンジン app.js】
+// 🌪️【KUINA AI RACING ANALYTICS - 完全統合型オールインワン app.js】
 
 var VENUE_MAP = {
     "札幌": "01", "函館": "02", "福島": "03", "新潟": "04",
@@ -12,19 +12,18 @@ var VENUE_MAP = {
     "東": "東京", "中": "中山", "阪": "阪神", "京": "京都", "福": "福島", "新": "新潟", "札": "札幌", "函": "函館", "小": "小倉"
 };
 
-var currentSortMode = "num"; // 'num', 'odds', 'ai'
-var currentDetailShow = false;
-var currentMatchedHorses = [];
-var selectedHorseNum = null;
+var currentHorsesData = [];
+var currentSortMode = 'num';
+var selectedBetType = 'umaren';
+var selectedBetHorses = [];
 
 function resolveVenueInfo(v) {
-    if (!v) return { name: "", code: "", short: "", isWest: false };
+    if (!v) return { name: "", code: "", short: "" };
     var raw = v.toString().replace(/競馬場/g, "").replace(/\s+/g, "").trim();
     var code = VENUE_MAP[raw] && !isNaN(raw) ? (raw.length === 1 ? "0" + raw : raw) : (VENUE_MAP[raw] || "");
     var name = VENUE_MAP[raw] && isNaN(raw) ? raw : (VENUE_MAP[code] || raw);
     var short = name ? name.substring(0, 1) : "";
-    var isWest = (name === "京都" || name === "阪神" || name === "中京" || name === "小倉" || code === "08" || code === "09" || code === "07" || code === "10");
-    return { name: name, code: code, short: short, isWest: isWest };
+    return { name: name, code: code, short: short };
 }
 
 function normalizeDate(d) {
@@ -37,425 +36,530 @@ function normalizeDate(d) {
 }
 
 function normalizeRaceNum(r) {
-    if (!r) return 1;
+    if (!r) return 0;
     var m = r.toString().match(/\d+/);
-    return m ? parseInt(m, 10) : 1;
-}
-
-function findDomElement(idList) {
-    if (typeof document === "undefined") return null;
-    for (var i = 0; i < idList.length; i++) {
-        var el = document.getElementById(idList[i]);
-        if (el) return el;
-    }
-    return null;
-}
-
-function findDomValue(idList) {
-    var el = findDomElement(idList);
-    return el && el.value !== undefined ? el.value : "";
+    return m ? parseInt(m, 10) : 0;
 }
 
 // --------------------------------------------------
-// トラックバイアス＆展開予測の動的生成計算
+// 1. UIコンテナの自動挿入 (DOM Injector)
 // --------------------------------------------------
-function updateTrackBiasAndPace(venueName, raceNum, horses) {
-    var weatherVal = findDomValue(["sim-weather", "weather", "sim_weather"]) || "晴";
-    var trackStateVal = findDomValue(["sim-track-state", "track_state", "sim_track_state"]) || "良";
-    var trackTypeVal = findDomValue(["sim-track-type", "track_type", "sim_track_type"]) || "芝";
+function injectKuinaWidgets() {
+    if (typeof document === 'undefined') return;
 
-    // 1. トラックバイアス判定
-    var biasTitle = "";
-    var biasDesc = "";
-    if (trackTypeVal === "芝") {
-        if (trackStateVal === "良") {
-            biasTitle = "【芝】内・先行絶好 (高速馬場)";
-            biasDesc = "内ラチ沿いが良好な高速馬場。1〜3枠の先行馬が圧倒的に有利。外回り・差し馬はロスに警戒。";
-        } else if (trackStateVal === "稍重") {
-            biasTitle = "【芝】フラット (標準馬場)";
-            biasDesc = "適度なクッション性で脚質差は少ない。ペース次第で差し切り・先行残りの双方が狙える展開。";
+    var container = document.querySelector('.container') || document.body;
+    if (!container) return;
+
+    // 1. トラックバイアス & 天気・馬場設定パネル
+    if (!document.getElementById('kuina-bias-panel')) {
+        var biasDiv = document.createElement('div');
+        biasDiv.id = 'kuina-bias-panel';
+        biasDiv.className = 'kuina-card-panel';
+        biasDiv.innerHTML = `
+            <div class="panel-header">🌤️ 天気・馬場設定 & トラックバイアス診断</div>
+            <div class="bias-controls">
+                <div class="control-group">
+                    <label>コース種別:</label>
+                    <select id="kuina-track-type" onchange="updateTrackBiasAndPace()">
+                        <option value="turf">🌿 芝コース</option>
+                        <option value="dirt">🏜️ ダートコース</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label>天気・馬場状態:</label>
+                    <select id="kuina-track-condition" onchange="updateTrackBiasAndPace()">
+                        <option value="good">☀️ 晴 / 良馬場 (パンパンの高速馬場)</option>
+                        <option value="yielding">⛅ 曇 / 稍重 (標準〜ややタフ)</option>
+                        <option value="soft">🌧️ 小雨 / 重馬場 (タフ・水分含む)</option>
+                        <option value="bad">☔ 大雨 / 不良馬場 (荒れ馬場・泥悪化)</option>
+                    </select>
+                </div>
+            </div>
+            <div id="kuina-bias-result" class="bias-result-box">
+                <span class="bias-tag">【トラックバイアス診断】</span>
+                <span id="kuina-bias-text">【芝・良】内枠・先行有利。高速馬場でイン突き狙い目がハマる展開。</span>
+            </div>
+        `;
+        
+        var selectorBox = document.querySelector('.selector-box') || container.firstChild;
+        if (selectorBox && selectorBox.parentNode) {
+            selectorBox.parentNode.insertBefore(biasDiv, selectorBox.nextSibling);
         } else {
-            biasTitle = "【芝】外伸び・タフ馬場 (内荒れ)";
-            biasDesc = "内ラチ沿いの痛みが進行。直線で外に出せる差し・追い込み馬およびパワー型血統が急台頭。";
-        }
-    } else {
-        if (trackStateVal === "良") {
-            biasTitle = "【ダート】先行圧倒有利 (パサパサ砂)";
-            biasDesc = "砂が乾いてパサパサ。キックバックを嫌う馬が多く、ハナを切る逃げ・2番手の先行馬がそのまま押し切る。";
-        } else if (trackStateVal === "稍重" || trackStateVal === "重") {
-            biasTitle = "【ダート】高速水浮き馬場 (逃げ・前残り絶好)";
-            biasDesc = "脚抜きが良い高速ダート。前が止まらず、先行力と速い上がり時計を兼ね備えた馬が独走する傾向。";
-        } else {
-            biasTitle = "【ダート】超泥悪馬場 (パワー型重馬場)";
-            biasDesc = "水分を含み田んぼ状態。足元をとられやすく、スタミナ重視の重戦車タイプが急浮上。";
+            container.appendChild(biasDiv);
         }
     }
 
-    // 2. 展開予測判定
-    var totalHorses = horses.length;
-    var paceType = "ミドルペース";
-    var paceComment = "";
-
-    if (totalHorses >= 16) {
-        paceType = "ハイペース (差し・追い込み有利)";
-        paceComment = "多頭数で序盤のポジション争いが激化。ハイペース必至で、直線でバテた先行勢を狙い撃つ外差し馬に好機！";
-    } else if (totalHorses <= 11) {
-        paceType = "スローペース (前残り濃厚)";
-        paceComment = "少頭数で先手争いが落ち着く予想。逃げ・先行勢が楽にマイペースで逃げ切りやすく、後方差し馬は届かない恐れ。";
-    } else {
-        paceType = "ミドルペース (平均展開)";
-        paceComment = "平均的な流れ。実力通りの決着になりやすく、好位直後につける軸馬の安定感が光る展開。";
+    // 2. 展開予想 & 隊列マップパネル
+    if (!document.getElementById('kuina-pace-panel')) {
+        var paceDiv = document.createElement('div');
+        paceDiv.id = 'kuina-pace-panel';
+        paceDiv.className = 'kuina-card-panel';
+        paceDiv.innerHTML = `
+            <div class="panel-header">⚡ 展開予想 & 想定隊列マップ</div>
+            <div class="pace-summary">
+                <span class="pace-badge" id="kuina-pace-badge">ミドルペース (平均展開)</span>
+                <span id="kuina-pace-desc">実力通りの決着になりやすい標準展開です。</span>
+            </div>
+            <div class="position-map-grid" id="kuina-position-map">
+                <div class="pos-col"><div class="pos-title">🏃 逃げ</div><div class="pos-horses" id="pos-escape">-</div></div>
+                <div class="pos-col"><div class="pos-title">🐴 先行</div><div class="pos-horses" id="pos-ahead">-</div></div>
+                <div class="pos-col"><div class="pos-title">🐎 差し</div><div class="pos-horses" id="pos-insert">-</div></div>
+                <div class="pos-col"><div class="pos-title">🚀 追込</div><div class="pos-horses" id="pos-drive">-</div></div>
+            </div>
+        `;
+        var biasPanel = document.getElementById('kuina-bias-panel');
+        biasPanel.parentNode.insertBefore(paceDiv, biasPanel.nextSibling);
     }
 
-    // DOM要素へ反映
-    var biasTitleEl = findDomElement(["bias-title", "bias_title"]);
-    var biasDescEl = findDomElement(["bias-desc", "bias_desc"]);
-    var paceTypeEl = findDomElement(["pace-type", "pace_type"]);
-    var paceCommentEl = findDomElement(["pace-comment", "pace_comment"]);
+    // 3. AIおすすめ買い目 & 馬券購入金額シミュレーター
+    if (!document.getElementById('kuina-bet-panel')) {
+        var betDiv = document.createElement('div');
+        betDiv.id = 'kuina-bet-panel';
+        betDiv.className = 'kuina-card-panel gold-border';
+        betDiv.innerHTML = `
+            <div class="panel-header gold-text">🎯 AIおすすめ買い目 & 馬券資金配分シミュレーター</div>
+            
+            <div id="kuina-ai-recommendation" class="ai-rec-box">
+                <div class="rec-title">🤖 KUINA AI推奨買い目</div>
+                <div id="kuina-rec-content" class="rec-content">レースデータを読み込むとAIが最適な買い目を算出します</div>
+            </div>
 
-    if (biasTitleEl) biasTitleEl.innerText = biasTitle;
-    if (biasDescEl) biasDescEl.innerText = biasDesc;
-    if (paceTypeEl) paceTypeEl.innerText = "【展開予測】 " + paceType;
-    if (paceCommentEl) paceCommentEl.innerText = paceComment;
+            <div class="sim-section">
+                <div class="sim-title">💰 馬券シミュレーション（複数選択＆資金配分）</div>
+                <div class="sim-controls">
+                    <div class="control-group">
+                        <label>式別:</label>
+                        <select id="kuina-bet-type" onchange="onBetTypeChange()">
+                            <option value="tansho">単勝 (1頭選択)</option>
+                            <option value="fukusho">複勝 (1頭選択)</option>
+                            <option value="umaren" selected>馬連 (2頭以上流し/ボックス)</option>
+                            <option value="umatan">馬単 (2頭以上流し/ボックス)</option>
+                            <option value="sanrenpuku">3連複 (3頭以上流し/ボックス)</option>
+                            <option value="sanrentan">3連単 (3頭以上フォーメーション)</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label>総投資予算 (円):</label>
+                        <input type="number" id="kuina-total-budget" value="10000" step="100" min="100" oninput="calculateBetSimulation()">
+                    </div>
+                </div>
 
-    // 隊列マップ (逃げ・先行・差し・追込) の簡易振り分け
-    var nigeList = [], senkoList = [], sashiList = [], oikomiList = [];
+                <div class="sim-horse-selector">
+                    <label>対象馬を選択 (複数タップ可能):</label>
+                    <div id="kuina-horse-checkboxes" class="horse-check-grid">
+                        <span class="placeholder-text">レース検索完了後に馬を選択できます</span>
+                    </div>
+                </div>
+
+                <div id="kuina-sim-result" class="sim-result-box">
+                    <div class="sim-result-summary">
+                        <span>購入点数: <b id="sim-points">0</b>点</span>
+                        <span>1点予算: <b id="sim-per-point">0</b>円</span>
+                        <span>合成オッズ: <b id="sim-combo-odds">0.0</b>倍</span>
+                        <span>想定払戻金: <b id="sim-expected-return">0</b>円</span>
+                    </div>
+                    <div id="sim-breakdown" class="sim-breakdown-list"></div>
+                </div>
+            </div>
+        `;
+        var pacePanel = document.getElementById('kuina-pace-panel');
+        pacePanel.parentNode.insertBefore(betDiv, pacePanel.nextSibling);
+    }
+}
+
+// --------------------------------------------------
+// 2. トラックバイアス & 展開予想の連動更新
+// --------------------------------------------------
+function updateTrackBiasAndPace() {
+    var tTypeEl = document.getElementById('kuina-track-type');
+    var tCondEl = document.getElementById('kuina-track-condition');
+    if (!tTypeEl || !tCondEl) return;
+
+    var trackType = tTypeEl.value; // turf / dirt
+    var trackCond = tCondEl.value; // good / yielding / soft / bad
+
+    var biasText = "";
+    if (trackType === 'turf') {
+        if (trackCond === 'good') biasText = "【芝・良】高速馬場。内枠＆先行馬が圧倒有利。直線イン突きがハマる展開。";
+        else if (trackCond === 'yielding') biasText = "【芝・稍重】ややタフな時計。差し馬が届く標準的な差し・追い込み展開。";
+        else if (trackCond === 'soft') biasText = "【芝・重】時計が掛かるタフ馬場。パワー型の内・外差し馬に警戒。";
+        else biasText = "【芝・不良】水が浮く荒れ馬場。内ラチ荒れにつき、外差し・外伸び馬が突っ込む高配当波乱傾向！";
+    } else {
+        if (trackCond === 'good') biasText = "【ダート・良】パサパサの乾燥砂。キックバックを嫌う先行馬圧倒有利！前残り警戒。";
+        else if (trackCond === 'yielding') biasText = "【ダート・稍重】締まった砂で時計スピード向上。逃げ・先行重視。";
+        else if (trackCond === 'soft') biasText = "【ダート・重】高速水浮き馬場。前に行った馬がそのまま止まらない高速レース！";
+        else biasText = "【ダート・不良】超高速泥馬場。逃げ・1番手追走馬がそのまま押し切る展開。";
+    }
+
+    var biasTextEl = document.getElementById('kuina-bias-text');
+    if (biasTextEl) biasTextEl.innerText = biasText;
+
+    // 展開＆隊列の更新
+    if (currentHorsesData && currentHorsesData.length > 0) {
+        updatePaceAndPositions(currentHorsesData, trackType, trackCond);
+    }
+}
+
+function updatePaceAndPositions(horses, trackType, trackCond) {
+    var total = horses.length;
+    var paceBadge = document.getElementById('kuina-pace-badge');
+    var paceDesc = document.getElementById('kuina-pace-desc');
+
+    if (total >= 16) {
+        if (paceBadge) { paceBadge.innerText = "⚡ ハイペース (前崩れ・差し有利)"; paceBadge.className = "pace-badge pace-high"; }
+        if (paceDesc) paceDesc.innerText = "多頭数でハナ争いが激化。先行勢がバテて差し・追込馬の強襲に注目！";
+    } else if (total <= 11) {
+        if (paceBadge) { paceBadge.innerText = "🐢 スローペース (前残り濃厚)"; paceBadge.className = "pace-badge pace-slow"; }
+        if (paceDesc) paceDesc.innerText = "少頭数でペースが落ち着く展開。逃げ・先行馬が楽に押し切りやすい！";
+    } else {
+        if (paceBadge) { paceBadge.innerText = "⚖️ ミドルペース (平均展開)"; paceBadge.className = "pace-badge pace-mid"; }
+        if (paceDesc) paceDesc.innerText = "平均ペースでの推移。実力通りの軸馬が安定して力を発揮します。";
+    }
+
+    // 脚質の振り分け (馬番やオッズ等から擬似分類)
+    var esc = [], ahead = [], ins = [], drive = [];
     for (var i = 0; i < horses.length; i++) {
         var h = horses[i];
-        if (i === 0 || i === 1) nigeList.push(h.num + "番" + h.name);
-        else if (i >= 2 && i <= 5) senkoList.push(h.num + "番" + h.name);
-        else if (i >= 6 && i <= 11) sashiList.push(h.num + "番" + h.name);
-        else oikomiList.push(h.num + "番" + h.name);
+        var num = h.num;
+        var tag = `<b>${num}. ${h.name}</b>`;
+        if (i === 0 || num === 1 || num === 7) esc.push(tag);
+        else if (i % 3 === 1) ahead.push(tag);
+        else if (i % 3 === 2) ins.push(tag);
+        else drive.push(tag);
     }
 
-    var mapEl = findDomElement(["position-map", "position_map"]);
-    if (mapEl) {
-        mapEl.innerHTML = 
-            "<div class='pos-group'><span class='pos-label pos-nige'>逃げ</span> " + (nigeList.join(", ") || "なし") + "</div>" +
-            "<div class='pos-group'><span class='pos-label pos-senko'>先行</span> " + (senkoList.join(", ") || "なし") + "</div>" +
-            "<div class='pos-group'><span class='pos-label pos-sashi'>差し</span> " + (sashiList.join(", ") || "なし") + "</div>" +
-            "<div class='pos-group'><span class='pos-label pos-oikomi'>追込</span> " + (oikomiList.join(", ") || "なし") + "</div>";
-    }
+    var elEsc = document.getElementById('pos-escape'); if (elEsc) elEsc.innerHTML = esc.join("<br>") || "-";
+    var elAhead = document.getElementById('pos-ahead'); if (elAhead) elAhead.innerHTML = ahead.join("<br>") || "-";
+    var elIns = document.getElementById('pos-insert'); if (elIns) elIns.innerHTML = ins.join("<br>") || "-";
+    var elDrive = document.getElementById('pos-drive'); if (elDrive) elDrive.innerHTML = drive.join("<br>") || "-";
 }
 
 // --------------------------------------------------
-// メイン描画処理 (6列ズレなし構造 & ドロワー展開)
+// 3. AIおすすめ買い目 ＆ 馬券シミュレータ
 // --------------------------------------------------
-function renderRaceTable() {
-    var tbody = findDomElement(["predict-tbody", "predict_tbody", "result-tbody", "tbody"]);
-    if (!tbody) return;
+function generateAiRecommendation(horses) {
+    if (!horses || horses.length < 3) return;
 
-    var horses = currentMatchedHorses.slice();
+    var sorted = horses.slice().sort(function(a, b) {
+        return (a.odds > 0 ? a.odds : 999) - (b.odds > 0 ? b.odds : 999);
+    });
 
-    // ソート順切り替え
-    if (currentSortMode === "odds") {
-        horses.sort(function(a, b) { return (a.odds > 0 ? a.odds : 9999) - (b.odds > 0 ? b.odds : 9999); });
-    } else if (currentSortMode === "ai") {
-        var rankMap = { "◎": 1, "○": 2, "▲": 3, "☆": 4, "△": 5, "-": 6 };
-        horses.sort(function(a, b) {
-            var rA = rankMap[a.aiMarkCode] || 6;
-            var rB = rankMap[b.aiMarkCode] || 6;
-            if (rA !== rB) return rA - rB;
-            return a.num - b.num;
-        });
-    } else {
-        horses.sort(function(a, b) { return a.num - b.num; });
-    }
+    var honmei = sorted[0];
+    var taikou = sorted[1];
+    var tanana = sorted[2];
+    var ana = sorted.length > 5 ? sorted[4] : sorted[3];
+
+    var html = `
+        <div class="rec-row"><b>🎯 本命勝負馬連:</b> ${honmei.num} - ${taikou.num} (${honmei.name} - ${taikou.name})</div>
+        <div class="rec-row"><b>🔥 本命-対抗-単穴 3連複1点:</b> ${honmei.num} - ${taikou.num} - ${tanana.num}</div>
+        <div class="rec-row"><b>🌟 高配当穴流し (馬連流し):</b> 軸: ${honmei.num} ➔ 相手: ${taikou.num}, ${tanana.num}, ${ana.num}</div>
+    `;
+
+    var recEl = document.getElementById('kuina-rec-content');
+    if (recEl) recEl.innerHTML = html;
+
+    // チェックボックスの更新
+    renderHorseCheckboxes(horses);
+}
+
+function renderHorseCheckboxes(horses) {
+    var box = document.getElementById('kuina-horse-checkboxes');
+    if (!box) return;
 
     var html = "";
-    for (var j = 0; j < horses.length; j++) {
-        var h = horses[j];
-        var isSelected = (selectedHorseNum === h.num);
+    for (var i = 0; i < horses.length; i++) {
+        var h = horses[i];
+        var checked = (i < 3) ? "checked" : "";
+        html += `
+            <label class="horse-chk-item">
+                <input type="checkbox" value="${h.num}" data-odds="${h.odds}" ${checked} onchange="calculateBetSimulation()">
+                <span>${h.num}.${h.name} (${h.odds > 0 ? h.odds + '倍' : '未確定'})</span>
+            </label>
+        `;
+    }
+    box.innerHTML = html;
+    calculateBetSimulation();
+}
 
-        var oddsDisp = (h.odds > 0) ? h.odds + "倍" : "未確定";
-        var popDisp = h.popRank ? "(" + h.popRank + "人気)" : "";
+function onBetTypeChange() {
+    calculateBetSimulation();
+}
 
-        // 行クリックイベント付き TR (横ずれ一切なしの6列)
-        html += "<tr class='horse-row " + (isSelected ? "selected-row" : "") + "' onclick='toggleHorseDetail(" + h.num + ")'>" +
-                "<td><span class='waku-badge waku-" + h.waku + "'>" + h.waku + "枠" + h.num + "番</span></td>" +
-                "<td>" + h.aiMarkBadge + "</td>" +
-                "<td><span class='horse-name'>" + h.name + "</span><span class='sub-info'>(" + (h.sexAge || "牡") + ")</span></td>" +
-                "<td><span class='jockey-name'>" + h.jockey + "</span><span class='sub-info'>(" + (h.kinryo || "56") + "kg)</span></td>" +
-                "<td><span class='trainer-name'>" + (h.trainer || "-") + "</span></td>" +
-                "<td><span class='odds-val'>" + oddsDisp + "</span><br><span class='pop-rank'>" + popDisp + "</span></td>" +
-                "</tr>";
+function calculateBetSimulation() {
+    var typeEl = document.getElementById('kuina-bet-type');
+    var budgetEl = document.getElementById('kuina-total-budget');
+    if (!typeEl || !budgetEl) return;
 
-        // タップ/クリック展開カード (選択中 または 一括全開時)
-        if (isSelected || currentDetailShow) {
-            html += "<tr class='detail-drawer-row'>" +
-                    "<td colspan='6'>" +
-                    "<div class='horse-detail-card'>" +
-                    "<div class='detail-grid'>" +
-                    "<div class='detail-item'><span class='detail-lbl'>性齢・斤量</span> <b>" + (h.sexAge || "牡") + " / " + (h.kinryo || "56") + "kg</b></div>" +
-                    "<div class='detail-item'><span class='detail-lbl'>所属・調教師</span> <b>" + (h.stable || "") + " " + (h.trainer || "未定") + "</b></div>" +
-                    "<div class='detail-item'><span class='detail-lbl'>単勝オッズ</span> <b class='odds-val'>" + oddsDisp + " " + popDisp + "</b></div>" +
-                    "<div class='detail-item'><span class='detail-lbl'>AI評価判定</span> <b>" + h.aiTag + "</b></div>" +
-                    "</div>" +
-                    "<div class='detail-comment'>💡 <b>AI適性診断:</b> " + h.aiComment + "</div>" +
-                    "</div>" +
-                    "</td>" +
-                    "</tr>";
+    var bType = typeEl.value;
+    var budget = parseInt(budgetEl.value, 10) || 10000;
+
+    var chks = document.querySelectorAll('#kuina-horse-checkboxes input[type="checkbox"]:checked');
+    var selected = [];
+    chks.forEach(function(c) {
+        selected.push({
+            num: parseInt(c.value, 10),
+            odds: parseFloat(c.getAttribute('data-odds')) || 10.0
+        });
+    });
+
+    var pts = 0;
+    var combinations = [];
+
+    if (bType === 'tansho' || bType === 'fukusho') {
+        pts = selected.length;
+        for (var i = 0; i < selected.length; i++) {
+            combinations.push({ name: selected[i].num + "番", odds: selected[i].odds });
+        }
+    } else if (bType === 'umaren' || bType === 'umatan') {
+        if (selected.length >= 2) {
+            for (var i = 0; i < selected.length; i++) {
+                for (var j = i + 1; j < selected.length; j++) {
+                    var combOdds = (selected[i].odds * selected[j].odds * 0.25).toFixed(1);
+                    if (combOdds < 2.0) combOdds = 2.0;
+                    combinations.push({ name: selected[i].num + " - " + selected[j].num, odds: parseFloat(combOdds) });
+                }
+            }
+            pts = combinations.length;
+        }
+    } else if (bType === 'sanrenpuku' || bType === 'sanrentan') {
+        if (selected.length >= 3) {
+            for (var i = 0; i < selected.length; i++) {
+                for (var j = i + 1; j < selected.length; j++) {
+                    for (var k = j + 1; k < selected.length; k++) {
+                        var combOdds = (selected[i].odds * selected[j].odds * selected[k].odds * 0.1).toFixed(1);
+                        if (combOdds < 5.0) combOdds = 5.0;
+                        combinations.push({ name: selected[i].num + " - " + selected[j].num + " - " + selected[k].num, odds: parseFloat(combOdds) });
+                    }
+                }
+            }
+            pts = combinations.length;
         }
     }
 
-    tbody.innerHTML = html;
-}
+    var perPoint = pts > 0 ? Math.floor(budget / pts / 100) * 100 : 0;
+    if (perPoint < 100 && pts > 0) perPoint = 100;
 
-function toggleHorseDetail(horseNum) {
-    if (selectedHorseNum === horseNum) {
-        selectedHorseNum = null;
-    } else {
-        selectedHorseNum = horseNum;
+    var totalCost = perPoint * pts;
+
+    // 均等オッズ/合成オッズ計算
+    var invOddsSum = 0;
+    for (var m = 0; m < combinations.length; m++) {
+        if (combinations[m].odds > 0) invOddsSum += (1.0 / combinations[m].odds);
     }
-    renderRaceTable();
-}
+    var comboOdds = invOddsSum > 0 ? (1.0 / invOddsSum).toFixed(1) : 0.0;
+    var expectedReturn = Math.floor(totalCost * comboOdds);
 
-function setSortMode(mode) {
-    currentSortMode = mode;
-    var btnNum = findDomElement(["btn-sort-num"]);
-    var btnOdds = findDomElement(["btn-sort-odds"]);
-    var btnAi = findDomElement(["btn-sort-ai"]);
+    // UI更新
+    var pEl = document.getElementById('sim-points'); if (pEl) pEl.innerText = pts;
+    var ppEl = document.getElementById('sim-per-point'); if (ppEl) ppEl.innerText = perPoint.toLocaleString();
+    var coEl = document.getElementById('sim-combo-odds'); if (coEl) coEl.innerText = comboOdds;
+    var erEl = document.getElementById('sim-expected-return'); if (erEl) erEl.innerText = expectedReturn.toLocaleString();
 
-    if (btnNum) btnNum.className = "sort-btn " + (mode === "num" ? "active" : "");
-    if (btnOdds) btnOdds.className = "sort-btn " + (mode === "odds" ? "active" : "");
-    if (btnAi) btnAi.className = "sort-btn " + (mode === "ai" ? "active" : "");
-
-    renderRaceTable();
-}
-
-function toggleDetailShowAll() {
-    currentDetailShow = !currentDetailShow;
-    var btn = findDomElement(["btn-toggle-detail"]);
-    if (btn) btn.innerText = currentDetailShow ? "👁️ 詳細表示: ON" : "👁️ 詳細表示: OFF";
-    renderRaceTable();
+    var bdList = document.getElementById('sim-breakdown');
+    if (bdList) {
+        if (combinations.length === 0) {
+            bdList.innerHTML = '<span class="placeholder-text">対象の馬を必要数選択してください</span>';
+        } else {
+            var bdHtml = "";
+            for (var n = 0; n < combinations.length; n++) {
+                var item = combinations[n];
+                var estPay = Math.floor(perPoint * item.odds);
+                bdHtml += `
+                    <div class="sim-item-row">
+                        <span>🎯 買い目: <b>${item.name}</b></span>
+                        <span>オッズ: <b>${item.odds}倍</b></span>
+                        <span>配分: <b>${perPoint.toLocaleString()}円</b> (払戻金: ${estPay.toLocaleString()}円)</span>
+                    </div>
+                `;
+            }
+            bdList.innerHTML = bdHtml;
+        }
+    }
 }
 
 // --------------------------------------------------
-// メインデータ検索・パース・照合関数
+// 4. データ読み込み ＆ 表描画
 // --------------------------------------------------
+function parseJraCsvRaceData(csvText, targetRaceNum) {
+    var lines = csvText.split(/\r?\n/);
+    var allHorses = [];
+
+    for (var i = 0; i < lines.length; i++) {
+        var line = lines[i].trim();
+        if (!line) continue;
+        var cols = line.split(',');
+        if (cols.length < 13) continue;
+
+        var horseName = cols[7] ? cols[7].replace(/"/g, '').trim() : "";
+        if (!horseName || !/^[\u30A0-\u30FFー・]{2,9}$/.test(horseName)) continue;
+
+        var waku = parseInt(cols[0], 10) || 1;
+        var num = parseInt(cols[2], 10) || 1;
+        var sex = cols[9] ? cols[9].replace(/"/g, '').trim() : "牡";
+        var age = cols[10] ? cols[10].replace(/"/g, '').trim() : "3";
+        var jockey = cols[12] ? cols[12].replace(/"/g, '').trim() : "不明";
+        var kinryo = cols[13] ? cols[13].replace(/"/g, '').trim() : "56";
+        var odds = parseFloat(cols[15]) || 0.0;
+        var stable = cols[16] ? cols[16].replace(/"/g, '').trim() : "(美)";
+        var trainer = cols[17] ? cols[17].replace(/"/g, '').trim() : "調教師";
+
+        allHorses.push({
+            waku: waku, num: num, name: horseName, sex: sex, age: age,
+            jockey: jockey, kinryo: kinryo, odds: odds, stable: stable, trainer: trainer
+        });
+    }
+
+    var raceBlocks = [];
+    var currentBlock = [];
+    for (var j = 0; j < allHorses.length; j++) {
+        var h = allHorses[j];
+        if (h.num === 1 && currentBlock.length > 0) {
+            raceBlocks.push(currentBlock);
+            currentBlock = [];
+        }
+        currentBlock.push(h);
+    }
+    if (currentBlock.length > 0) raceBlocks.push(currentBlock);
+
+    var targetBlockIndex = 0;
+    if (targetRaceNum >= 1 && targetRaceNum <= 12) {
+        if (raceBlocks.length >= 24) targetBlockIndex = targetRaceNum - 1;
+        else if (raceBlocks.length >= targetRaceNum) targetBlockIndex = targetRaceNum - 1;
+    }
+
+    return raceBlocks[targetBlockIndex] || [];
+}
+
 function loadAndUnzipJraDatabase() {
+    injectKuinaWidgets();
+
     var rawDate = findDomValue(["sim-date", "sim_date", "date", "race-date", "race_date"]);
     var rawVenue = findDomValue(["sim-venue", "sim_venue", "venue", "race-venue", "race_venue"]);
     var rawRace = findDomValue(["sim-race", "sim_race", "race", "race-num", "race_num"]);
     var btn = findDomElement(["predict-btn", "predict_btn", "btn-predict", "submit-btn"]);
+    var tbody = findDomElement(["predict-tbody", "predict_tbody", "result-tbody", "tbody"]);
 
     var cG = normalizeDate(rawDate) || "20261003";
     var tVenue = resolveVenueInfo(rawVenue);
     var cR = normalizeRaceNum(rawRace) || 11;
 
-    if (btn) btn.innerText = "⚡ データ精査中...";
+    if (btn) btn.innerText = "⚡ KUINA AI 分析中...";
 
-    // 1. CSVファイルを最優先検索 (DG261003.CSV / DG261004.CSV)
-    var csvFilename = "DG" + cG.substring(2) + ".CSV";
+    var csvFileName = "DG" + cG.substring(2) + ".CSV";
 
-    fetch(csvFilename, { method: "GET", cache: "no-cache" })
+    fetch(csvFileName, { method: "GET", cache: "no-cache" })
         .then(function(res) {
-            if (res.ok) return res.arrayBuffer();
-            throw new Error("CSVなし");
+            if (!res.ok) throw new Error("CSV取得失敗: " + csvFileName);
+            return res.arrayBuffer();
         })
         .then(function(buffer) {
             var decoder = new TextDecoder("shift_jis");
-            var csvText = decoder.decode(buffer);
-            var lines = csvText.split("\n");
+            var text = decoder.decode(buffer);
 
-            // CSVをレースごとに分割
-            var allRaces = [];
-            var currRace = [];
-            for (var i = 0; i < lines.length; i++) {
-                var l = lines[i].trim();
-                if (!l) continue;
-                var row = l.split(",");
-                if (row.length >= 3) {
-                    var numVal = parseInt(row[2].trim(), 10);
-                    if (numVal === 1 && currRace.length > 0) {
-                        allRaces.push(currRace);
-                        currRace = [];
-                    }
-                    currRace.push(row);
-                }
-            }
-            if (currRace.length > 0) allRaces.push(currRace);
-
-            // 競馬場ブロック(東西)とレース番号から該当する【単一レース】のインデックスをピンポイント特定
-            var blockOffset = tVenue.isWest ? 12 : 0;
-            var targetIdx = blockOffset + (cR - 1);
-
-            if (targetIdx < 0 || targetIdx >= allRaces.length) {
-                targetIdx = 0; // フォールバック
+            var horses = parseJraCsvRaceData(text, cR);
+            if (!horses || horses.length === 0) {
+                alert("❌ 該当レースのデータが見つかりませんでした");
+                if (btn) btn.innerText = "🧠 レースデータを解析・可視化";
+                return;
             }
 
-            var targetRaceRows = allRaces[targetIdx];
-            var parsedHorses = [];
+            currentHorsesData = horses;
 
-            for (var k = 0; k < targetRaceRows.length; k++) {
-                var r = targetRaceRows[k];
-                if (r.length < 14) continue;
+            // AI印の算出
+            var sortedByOdds = horses.slice().sort(function(a, b) {
+                return (a.odds > 0 ? a.odds : 999) - (b.odds > 0 ? b.odds : 999);
+            });
 
-                var waku = parseInt(r[0].trim(), 10) || Math.min(8, Math.ceil((k + 1) / 2));
-                var num = parseInt(r[2].trim(), 10) || (k + 1);
-                var name = r[7] ? r[7].trim() : "馬名不明";
-                var sex = r[9] ? r[9].trim() : "牡";
-                var age = r[10] ? r[10].trim() : "3";
-                var jockey = r[12] ? r[12].trim() : "騎手未定";
-                var kinryo = r[13] ? r[13].trim() : "56";
-                var oddsVal = r[15] ? parseFloat(r[15].trim()) : 0.0;
-                var stable = r[16] ? r[16].trim() : "";
-                var trainer = r[17] ? r[17].trim() : "";
+            for (var k = 0; k < horses.length; k++) {
+                var hObj = horses[k];
+                var rank = sortedByOdds.indexOf(hObj);
+                hObj.popRank = rank + 1;
 
-                if (!name || name === "馬名不明") continue;
-
-                parsedHorses.push({
-                    waku: waku,
-                    num: num,
-                    name: name,
-                    sexAge: sex + age,
-                    jockey: jockey,
-                    kinryo: kinryo,
-                    odds: isNaN(oddsVal) ? 0.0 : oddsVal,
-                    stable: stable,
-                    trainer: trainer,
-                    finishPos: "未確定"
-                });
+                if (rank === 0) { hObj.aiMark = "◎ 本命"; hObj.aiClass = "ai-honmei"; }
+                else if (rank === 1) { hObj.aiMark = "○ 対抗"; hObj.aiClass = "ai-taikou"; }
+                else if (rank === 2) { hObj.aiMark = "▲ 単穴"; hObj.aiClass = "ai-tanana"; }
+                else if (hObj.odds >= 15.0 && hObj.odds <= 60.0 && rank < 7) { hObj.aiMark = "☆ 穴馬"; hObj.aiClass = "ai-ana"; }
+                else if (rank === 3 || rank === 4) { hObj.aiMark = "△ 連下"; hObj.aiClass = "ai-renka"; }
+                else { hObj.aiMark = "-"; hObj.aiClass = "ai-none"; }
             }
 
-            processHorsesAndRender(parsedHorses, tVenue.name || "中山", cR, btn);
+            renderHorsesTable(horses, tbody);
+            updateTrackBiasAndPace();
+            generateAiRecommendation(horses);
+
+            if (btn) btn.innerText = "🧠 レースデータを解析・可視化";
         })
-        .catch(function() {
-            // CSVがない場合、従来のracedata.zip / txt から単一レースを厳密抽出
-            fetch("racedata.zip", { method: "GET", cache: "no-cache" })
-                .then(function(res) { return res.arrayBuffer(); })
-                .then(async function(buffer) {
-                    if (typeof JSZip === "undefined") throw new Error("JSZipなし");
-                    var zip = await JSZip.loadAsync(buffer);
-                    var file = null;
-                    zip.forEach(function (relPath, zipEntry) {
-                        if (relPath.toLowerCase().indexOf(".txt") !== -1 && !file) file = zipEntry;
-                    });
-                    if (!file) throw new Error("TXTなし");
-
-                    var textBuffer = await file.async("arraybuffer");
-                    var decoder = new TextDecoder("shift_jis");
-                    var text = decoder.decode(textBuffer);
-                    var allLines = text.split("\n");
-
-                    var matched = [];
-                    for (var i = 0; i < allLines.length; i++) {
-                        var line = allLines[i].trim();
-                        if (!line) continue;
-                        var tokens = line.split(/[\s,\t|]+/).map(function(t) { return t.trim(); }).filter(Boolean);
-                        if (tokens.length < 5) continue;
-
-                        // 競走馬名特定
-                        var nameIdx = -1, horseName = "";
-                        for (var tIdx = 0; tIdx < tokens.length; tIdx++) {
-                            var cleanT = tokens[tIdx];
-                            if (/^[\u30A0-\u30FFー・]{2,9}$/.test(cleanT)) {
-                                if (!/^(ダート|障害|リステッド|スプリンターズ|フェブラリー|エリザベス|マイル|カップ)$/.test(cleanT)) {
-                                    nameIdx = tIdx; horseName = cleanT; break;
-                                }
-                            }
-                        }
-                        if (!horseName) continue;
-
-                        var jockey = (nameIdx + 1 < tokens.length) ? tokens[nameIdx + 1] : "未定";
-                        var num = 1, waku = 1;
-                        for (var k = nameIdx - 1; k >= 0; k--) {
-                            if (/^\d{1,2}$/.test(tokens[k])) {
-                                var v = parseInt(tokens[k], 10);
-                                if (v >= 1 && v <= 18) { num = v; break; }
-                            }
-                        }
-                        waku = Math.min(8, Math.ceil((num + 1) / 2));
-
-                        var oddsVal = 0.0;
-                        for (var m = tokens.length - 1; m > nameIdx; m--) {
-                            var f = parseFloat(tokens[m].replace("倍",""));
-                            if (!isNaN(f) && f > 0 && f < 999) { oddsVal = f; break; }
-                        }
-
-                        // レース番号(cR)の厳密一致判定 (全レース混入防止)
-                        var isExactRace = (line.indexOf(cR + "R") !== -1 || line.indexOf(" " + cR + " ") !== -1 || line.indexOf("第" + cR) !== -1);
-                        if (isExactRace || allLines.length <= 25) {
-                            matched.push({
-                                waku: waku, num: num, name: horseName, sexAge: "牡3",
-                                jockey: jockey, kinryo: "56", odds: oddsVal, stable: "(美)", trainer: "調教師", finishPos: "未確定"
-                            });
-                        }
-                    }
-
-                    processHorsesAndRender(matched, tVenue.name || "中山", cR, btn);
-                })
-                .catch(function(err) {
-                    alert("❌ データ取得・照合エラー:\n" + err.message);
-                    if (btn) btn.innerText = "🧠 指定レースのデータ検索を実行";
-                });
+        .catch(function(err) {
+            alert("❌ データ読込エラー: " + err.message);
+            if (btn) btn.innerText = "🧠 レースデータを解析・可視化";
         });
 }
 
-function processHorsesAndRender(horses, venueName, raceNum, btn) {
-    if (!horses || horses.length === 0) {
-        alert("❌ 【照合不一致】 指定されたレースの馬データが見つかりませんでした。");
-        if (btn) btn.innerText = "🧠 指定レースのデータ検索を実行";
-        return;
+function renderHorsesTable(horses, tbody) {
+    if (!tbody) tbody = findDomElement(["predict-tbody", "predict_tbody", "result-tbody", "tbody"]);
+    if (!tbody) return;
+
+    var list = horses.slice();
+    if (currentSortMode === 'odds') {
+        list.sort(function(a, b) { return (a.odds > 0 ? a.odds : 999) - (b.odds > 0 ? b.odds : 999); });
+    } else if (currentSortMode === 'ai') {
+        var markOrder = { '◎ 本命': 1, '○ 対抗': 2, '▲ 単穴': 3, '☆ 穴馬': 4, '△ 連下': 5, '-': 9 };
+        list.sort(function(a, b) { return (markOrder[a.aiMark] || 9) - (markOrder[b.aiMark] || 9); });
+    } else {
+        list.sort(function(a, b) { return a.num - b.num; });
     }
 
-    // 単勝オッズによる人気順およびAI推奨印の動的算出
-    var sortedByOdds = horses.slice().sort(function(a, b) {
-        return (a.odds > 0 ? a.odds : 9999) - (b.odds > 0 ? b.odds : 9999);
+    var html = "";
+    for (var j = 0; j < list.length; j++) {
+        var h = list[j];
+        var oddsDisp = h.odds > 0 ? h.odds + "倍" : "未確定";
+        var popDisp = h.popRank ? "(" + h.popRank + "人気)" : "";
+
+        html += `
+            <tr onclick="toggleHorseDetail(${h.num})" style="cursor:pointer;">
+                <td><span class="waku-badge waku-${h.waku}">${h.waku}枠${h.num}番</span></td>
+                <td><span class="ai-badge ${h.aiClass}">${h.aiMark}</span></td>
+                <td><span class="horse-name">${h.name}</span><span class="sub-info">(${h.sex}${h.age})</span></td>
+                <td><span class="jockey-name">${h.jockey}</span><span class="sub-info">(${h.kinryo}kg)</span></td>
+                <td><span class="sub-info">${h.stable} ${h.trainer}</span></td>
+                <td><span class="odds-val">${oddsDisp}</span><br><span class="pop-rank">${popDisp}</span></td>
+            </tr>
+            <tr id="detail-row-${h.num}" class="detail-drawer-row" style="display:none;">
+                <td colspan="6">
+                    <div class="drawer-card">
+                        <div class="drawer-title">🐴 ${h.num}番 ${h.name} 詳細分析カード</div>
+                        <div class="drawer-grid">
+                            <div>性齢・斤量: <b>${h.sex}${h.age} / ${h.kinryo}kg</b></div>
+                            <div>騎手・厩舎: <b>${h.jockey} (${h.stable}${h.trainer})</b></div>
+                            <div>単勝オッズ: <b>${oddsDisp} ${popDisp}</b></div>
+                            <div>AI判定: <b>${h.aiMark}</b></div>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }
+    tbody.innerHTML = html;
+}
+
+function toggleHorseDetail(num) {
+    var row = document.getElementById("detail-row-" + num);
+    if (!row) return;
+    row.style.display = (row.style.display === "none" || !row.style.display) ? "table-row" : "none";
+}
+
+function setSortMode(mode) {
+    currentSortMode = mode;
+    if (currentHorsesData && currentHorsesData.length > 0) {
+        renderHorsesTable(currentHorsesData);
+    }
+}
+
+// ページロード時に自動初期化注入
+if (typeof window !== 'undefined') {
+    window.addEventListener('DOMContentLoaded', function() {
+        injectKuinaWidgets();
     });
-
-    for (var i = 0; i < horses.length; i++) {
-        var h = horses[i];
-        var rank = sortedByOdds.indexOf(h);
-        h.popRank = (h.odds > 0) ? (rank + 1) : null;
-
-        if (rank === 0 && h.odds > 0) {
-            h.aiMarkCode = "◎";
-            h.aiMarkBadge = "<span class='ai-badge ai-honmei'>◎ 本命</span>";
-            h.aiTag = "🏆 勝率No.1・軸馬本命";
-            h.aiComment = "単勝オッズ支持率トップ。調教時計・血統適性・鞍上すべての要素が高水準で本命筆頭。";
-        } else if (rank === 1 && h.odds > 0) {
-            h.aiMarkCode = "○";
-            h.aiMarkBadge = "<span class='ai-badge ai-taikou'>○ 対抗</span>";
-            h.aiTag = "🔥 強力対抗・主力級";
-            h.aiComment = "本命馬に迫る実力馬。展開ひとつで逆転首位まで十分狙える好気配。";
-        } else if (rank === 2 && h.odds > 0) {
-            h.aiMarkCode = "▲";
-            h.aiMarkBadge = "<span class='ai-badge ai-tanana'>▲ 単穴</span>";
-            h.aiTag = "⚡ 逆転候補・一発警戒";
-            h.aiComment = "ハマった時の決め手は上位拮抗。三連系馬券の対抗穴として外せない1頭。";
-        } else if (h.odds >= 15.0 && h.odds <= 60.0 && rank >= 3 && rank <= 7) {
-            h.aiMarkCode = "☆";
-            h.aiMarkBadge = "<span class='ai-badge ai-ana'>☆ 穴馬</span>";
-            h.aiTag = "💰 高配当狙い・爆発穴馬";
-            h.aiComment = "オッズ妙味十分の高配当キーマン。トラックバイアス適合で一発激走の好気配！";
-        } else if ((rank === 3 || rank === 4) && h.odds > 0) {
-            h.aiMarkCode = "△";
-            h.aiMarkBadge = "<span class='ai-badge ai-renka'>△ 連下</span>";
-            h.aiTag = "🎯 紐候補・連下圏内";
-            h.aiComment = "安定した立ち回りが武器。2・3着付けのヒモ軸として押さえておきたい有力馬。";
-        } else {
-            h.aiMarkCode = "-";
-            h.aiMarkBadge = "<span class='ai-badge ai-none'>-</span>";
-            h.aiTag = "静観・展開待ち";
-            h.aiComment = "上位陣の壁は厚いが、極端な展開の助けがあれば食い込みも。";
-        }
-    }
-
-    currentMatchedHorses = horses;
-    selectedHorseNum = null;
-
-    // ヘッダーサマリー更新
-    var summaryEl = findDomElement(["race-summary-info", "race_summary_info"]);
-    if (summaryEl) {
-        summaryEl.innerHTML = "<span>📍 " + venueName + " " + raceNum + "R</span> <span>🏇 出走頭数: " + horses.length + "頭</span>";
-    }
-
-    // トラックバイアス＆展開予測の更新
-    updateTrackBiasAndPace(venueName, raceNum, horses);
-
-    // テーブル描画
-    renderRaceTable();
-
-    if (btn) btn.innerText = "🧠 指定レースのデータ検索を実行";
+    // 即時実行
+    setTimeout(injectKuinaWidgets, 300);
 }
