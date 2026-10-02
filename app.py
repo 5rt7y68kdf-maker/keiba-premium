@@ -1,122 +1,114 @@
 # -*- coding: utf-8 -*-
 import os
 import zipfile
-import io
+import sys
 from flask import Flask, jsonify, request
 
 app = Flask(__name__)
 
-# 🌟高速検索用グローバルインデックス（メモリ上に保持）
+# インデックス保持用
 RACE_INDEX = {}
 
-def build_race_database_index_from_zip():
+def build_race_database_index_debug():
     """
-    Renderの裏側でracedata.zipを強制全自動解凍し、
-    オーナーの本物データ（スペース区切り・5番目馬名・6番目騎手）に完全適合させる関数
+    サーバー起動時にracedata.zipの読み込みおよび
+    インデックス作成処理のどこで止まるかを完全に追跡する関数
     """
     global RACE_INDEX
-    RACE_INDEX = {} # 初期化
+    RACE_INDEX = {}
     
     zip_path = "racedata.zip"
+    print("➔ [4/7-A] [Python] ZIP/インデックス読み込み処理を開始します。")
+    print(f"🔍 [Python] カレントディレクトリ内のファイル一覧: {os.listdir('.')}")
+    
     if not os.path.exists(zip_path):
-        print(f"⚠️ {zip_path} が見つかりません。")
+        print(f"❌ [Python] 致命的エラー: {zip_path} がサーバー上に物理的に存在しません。")
         return
 
+    print(f"⭕️ [Python] {zip_path} の存在を確認しました。これより展開を試みます。")
+    
     try:
+        # 🟥 【デバッグ4】ZIPファイル読み込み開始チェック
+        print("➔ [4/7-B] [Python] zipfile.ZipFile を開きます。")
         with zipfile.ZipFile(zip_path, 'r') as z:
-            target_file = None
-            for name in z.namelist():
+            
+            # 🟥 【デバッグ5】ZIP内のファイル認識チェック
+            print("➔ [5/7-A] [Python] ZIP内部のファイルリストを走査します。")
+            file_list = z.namelist()
+            print(f"📦 [Python] ZIP内ファイル一覧: {file_list}")
+            
+            target_txt = None
+            for name in file_list:
                 if name.lower().endswith('.txt'):
                     target_file = name
                     break
             
             if not target_file:
-                print("❌ ZIPの中にテキストファイル(.txt)が見つかりません。")
+                print("❌ [Python] エラー: ZIPの中にテキストファイル(.txt)が1つも見つかりません。")
                 return
                 
+            print(f"⭕️ [Python] 解凍対象テキストファイルを特定: {target_file}")
             raw_bytes = z.read(target_file)
-            # 日本語Shift-JISの文字化けを完全防御
-            try:
-                text_content = raw_bytes.decode('cp932', errors='ignore')
-            except Exception:
-                text_content = raw_bytes.decode('shift_jis', errors='ignore')
-
+            print(f"📡 [Python] ファイルの読み込みに成功しました（バイト数: {len(raw_bytes)} bytes）")
+            
+            # デコード処理
+            text_content = raw_bytes.decode('shift_jis', errors='ignore')
             lines = text_content.splitlines()
-            print(f"📡 Pythonエンジンが {target_file} の全頭スキャンを開始しました。（全 {len(lines)} 行）")
-
+            print(f"📡 [Python] テキストデータの行分割に成功（総行数: {len(lines)} 行）")
+            
+            # インデックス構築
+            print("➔ [5/7-B] [Python] メモリへのデータインデックスの構築を開始します。")
+            success_count = 0
             for line in lines:
                 line_clean = line.strip()
                 if not line_clean: continue
                 
-                # 🌟【重要】スペースやタブの連続を完璧に分解する
-                d = line_clean.split()
-                if not d or len(d) < 7: continue
-                if "日付" in d or "date" in d: continue
+                # カンマ区切り
+                d = [x.strip() for x in line_clean.split(',')]
+                if len(d) < 7: continue
                 
                 try:
-                    # 日付の変形処理（ハイフン除去・8桁純化）
-                    date_raw = d[0].replace("-", "").replace("/", "").strip()
-                    date_clean = "20" + date_raw if len(date_raw) == 6 else date_raw
+                    date_clean = d[0].replace("-", "").replace("/", "").strip()
                     venue_clean = d[1].strip()
                     race_clean = d[2].upper().replace("R", "").strip() + "R"
                     
-                    # 検索の超高速鍵（インデックスキー）を作成
                     index_key = f"{date_clean}_{venue_clean}_{race_clean}"
                     
-                    # 🌟オーナーから送ってもらった本物のデータ列に100%適合！
-                    waku_clean = int(d[3]) if d[3].isdigit() else 0
-                    num_clean = int(d[4]) if d[4].isdigit() else 0
-                    name_clean = d[5].strip()    # 👈5番目が本物の競走馬名！
-                    jockey_clean = d[6].strip()  # 👈6番目が本物の騎手名！
-                    odds_clean = float(d[7].replace("倍", "").strip()) if len(d) > 7 else 0.0
-                    
-                    order_clean = 99
-                    if len(d) > 8:
-                        order_raw = d[8].replace("着", "").replace("確定", "").strip()
-                        if order_raw.isdigit(): order_clean = int(order_raw)
-                    
-                    tan_pay_calc = int(odds_clean * 100) if order_clean == 1 else 0
-                    fuku_pay_calc = int((odds_clean * 0.3) * 100) if order_clean <= 3 else 0
-
                     horse_data = {
-                        "waku": waku_clean, "num": num_clean, "name": name_clean, "jockey": jockey_clean,
-                        "odds": odds_clean, "order": order_clean, "tan_pay": tan_pay_calc, "fuku_pay": fuku_pay_calc
+                        "waku": d[3], "num": d[4], "name": d[5], "jockey": d[6], "odds": d[7] if len(d) > 7 else "0.0"
                     }
                     
                     if index_key not in RACE_INDEX:
                         RACE_INDEX[index_key] = []
                     RACE_INDEX[index_key].append(horse_data)
-                    
-                except Exception:
+                    success_count += 1
+                except Exception as e:
                     continue
-
-        print(f"🏆 Python側のZIP強制自動解凍インデックスが完成しました！総レース数: {len(RACE_INDEX)}")
+                    
+            print(f"🏆 [Python] インデックス構築処理が完了しました。正常登録馬数: {success_count}頭, レースキー数: {len(RACE_INDEX)}")
+            
     except Exception as e:
-        print(f"❌ ZIP解凍中にエラーが発生しました: {str(e)}")
+        print(f"❌ [Python] ZIP処理中に例外エラーが発生しました。エラー内容: {str(e)}")
 
-# サーバー起動と同時に、Pythonがracedata.zipを一撃で全自動強制解凍！！！
-build_race_database_index_from_zip()
-
-@app.route('/', methods=['GET'])
-def index_page():
-    if os.path.exists("index.html"):
-        with open("index.html", "r", encoding="utf-8") as f:
-            return f.read()
-    return "❌ index.html が見つかりません。"
+# サーバー起動時にログ出力しながら構築を走らせる
+build_race_database_index_debug()
 
 @app.route('/api/predict', methods=['GET'])
 def get_prediction():
-    cond_date = request.args.get('date', '').replace('-', '').replace('/', '').strip()
+    # 🟥 【デバッグ3】Flask側の検索ルート呼び出しチェック
+    print("➔ [3/7] [Python] Flask APIがリクエストを検知しました（到達成功）")
+    
+    cond_date = request.args.get('date', '').strip()
     cond_venue = request.args.get('venue', '').strip()
     cond_race = request.args.get('race', '').upper().replace("R", "").strip() + "R"
     
     search_key = f"{cond_date}_{cond_venue}_{cond_race}"
-    results = RACE_INDEX.get(search_key, [])
-    results.sort(key=lambda x: x['num'])
+    print(f"🔍 [Python] 検索を実行します。生成された検索キー: {search_key}")
     
-    response = jsonify(results)
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    return response
+    results = RACE_INDEX.get(search_key, [])
+    print(f"➔ [5/7-C] [Python] 検索完了。メモリから抽出された馬データ件数: {len(results)}")
+    
+    return jsonify(results)
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
