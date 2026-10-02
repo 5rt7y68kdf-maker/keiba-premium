@@ -32,7 +32,7 @@
         
         <div class="selector-box">
             <p style="font-size:0.8rem; font-weight:bold; color:#aaa; margin: 4px 0;">➔ ① 開催年月日を選択してください</p>
-            <input type="date" id="sim-date" class="select-input" value="" onclick="this.showPicker();" onfocus="this.showPicker();">
+            <input type="date" id="sim-date" class="select-input" value="">
             
             <p style="font-size:0.8rem; font-weight:bold; color:#aaa; margin: 4px 0;">➔ ② 競馬場を選択してください</p>
             <select id="sim-venue" class="select-input">
@@ -108,7 +108,7 @@
         </div>
     </div>
     <script>
-        // 🚀Python頭脳（app.py）が解凍した1万8,781頭の本物データベースへ直撃通信を繋ぐ関数！
+        // 🚀 Python頭脳（app.py）がZIP内データを自動解凍して作ったデータベースに直撃通信する関数
         function searchJraPythonBackend() {
             var rawDate = document.getElementById("sim-date").value;
             if(!rawDate){ alert("❌ 日付を選択してください"); return; }
@@ -123,14 +123,14 @@
             var btn = document.getElementById("predict-btn");
             btn.innerText = "📡 Pythonバックエンドへ超高速照会中...";
 
-            // 🌟裏側のPython APIへ電波を飛ばす本物の通信処理！
+            // 裏側のPython APIへ電波を飛ばす通信処理
             var api_url = window.location.origin + "/api/predict?date=" + cG + "&venue=" + cV + "&race=" + cR;
 
             fetch(api_url)
                 .then(res => res.json())
                 .then(matched_horses => {
                     if (!matched_horses || matched_horses.length === 0) {
-                        alert("❌ 指定された開催日のデータがありません。実在する有効な開催データ（例：2026-05-03 ➔ 東京 ➔ 11R など）を選択してください。");
+                        alert("❌ 指定された開催日のデータがありません。選択内容の実在する有効な開催データ（例：2026-05-03 ➔ 東京 ➔ 11R など）を選択してください。");
                         btn.innerText = "🧠 指定レースのデータ検索を実行"; return;
                     }
 
@@ -147,8 +147,7 @@
                         var od = h.order === 1 ? "<span class='badge-win'>1着</span>" : (h.order <= 3 ? "<span class='badge-place'>" + h.order + "着</span>" : h.order + "着");
                         var pr = "-";
                         
-                        // 金額連動シミュレーション
-                        var tan_pay = h.order === 1 ? Math.floor(h.odds * 100) : 0;
-                        var fuku_pay = h.order <= 3 ? Math.floor((h.odds * 0.3) * 100) : 0;
-
                         if (cT === "1" && h.order === 1) { 
+                            pr = "<span style='color:#dc2626;font-weight:bold;'>+" + (Math.floor(cM * (h.tan_pay / 100))).toLocaleString() + "円</span>"; 
+                            t_ret += Math.floor(cM * (h.tan_pay / 100)); 
+                        } else if (cT === "2" && h.order <= 3) { 
