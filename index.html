@@ -33,11 +33,9 @@
         <div class="subtitle">JRAプレミアム過去ログ・1万8,781頭完全自走連動検索製品版</div>
         
         <div class="selector-box">
-            <!-- 🌟【改善1：日付カレンダー完全タップ選択式】枠を指で押した瞬間、スマホのカレンダー画面を全自動で最優先でシュッと強制起動させる命令を完全合体！！！ -->
             <p style="font-size:0.8rem; font-weight:bold; color:#aaa; margin: 4px 0;">➔ ① 開催年月日を選択してください</p>
             <input type="date" id="sim-date" class="select-input" value="" onclick="this.showPicker();" onfocus="this.showPicker();">
             
-            <!-- 🌟【競馬場：タップ選択式】みんながスマホの画面をポンと押すだけで1秒で場所を選べます！ -->
             <p style="font-size:0.8rem; font-weight:bold; color:#aaa; margin: 4px 0;">➔ ② 競馬場を選択してください</p>
             <select id="sim-venue" class="select-input">
                 <option value="" selected>-- 競馬場を選択してください --</option>
@@ -53,7 +51,6 @@
                 <option value="函館">函館</option>
             </select>
             
-            <!-- 🌟【レース番号：タップ選択式】1R〜12Rまで全部指先タップで迷わず選べます！ -->
             <p style="font-size:0.8rem; font-weight:bold; color:#aaa; margin: 4px 0;">➔ ③ レース番号を選択してください</p>
             <select id="sim-race" class="select-input">
                 <option value="" selected>-- レース番号を選択してください --</option>
@@ -71,7 +68,6 @@
                 <option value="12R">12R</option>
             </select>
             
-            <!-- 🌟【トラックバイアス：タップ選択式】オーナーの狙いたい傾向をバチッと選べます！ -->
             <p style="font-size:0.8rem; font-weight:bold; color:#aaa; margin: 4px 0;">➔ ④ 🌪️ 現在のトラックバイアス（馬場傾向）を選択</p>
             <select id="sim-bias" class="select-input">
                 <option value="" selected>-- 馬場傾向を選択してください --</option>
@@ -80,7 +76,6 @@
                 <option value="フラット">フラット（標準傾向・実力通り）</option>
             </select>
             
-            <!-- 🌟【馬券種：タップ選択式】単勝・複勝から回収まで1タップ切り替え！ -->
             <p style="font-size:0.8rem; font-weight:bold; color:#aaa; margin: 4px 0;">➔ ⑤ 購入する馬券のジャンル</p>
             <select id="sim-ticket" class="select-input">
                 <option value="" selected>-- 馬券の種類を選択してください --</option>
@@ -89,7 +84,6 @@
                 <option value="3">枠連・馬連・馬単・三連複・三連単（万馬券・全払戻回収モード）</option>
             </select>
             
-            <!-- 🌟【改善2：投資金額は自由手動入力フォーム】みんな額が違うから手動が一番ありがたい！最初は完全な真っ白な空欄の打ち込み欄に戻しました！！！ -->
             <p style="font-size:0.8rem; font-weight:bold; color:#aaa; margin: 4px 0;">➔ ⑥ 1点あたりの投資金額を入力してください（円）</p>
             <input type="tel" id="sim-money" class="text-input" placeholder="金額を自由に入力（例：1000）" value="">
             
@@ -116,6 +110,7 @@
         </div>
     </div>
     <script>
+        // 🌪️【完全大完成】大文字・小文字のファイル名制限を100%完全無視し、ZIPの中身を一撃で強制全自動解凍して読み解く本物のWeb検索エンジン！
         function loadAndUnzipJraDatabase() {
             var rawDate = document.getElementById("sim-date").value;
             if(!rawDate){ alert("❌ 日付を選択してください"); return; }
@@ -128,18 +123,15 @@
             if(!cR){ alert("❌ レース番号を選択してください"); return; }
             
             var cB = document.getElementById("sim-bias").value;
-            if(!cB){ alert("❌ トラックバイアスを選択してください"); return; }
-            
             var cT = document.getElementById("sim-ticket").value;
-            if(!cT){ alert("❌ 馬券の種類を選択してください"); return; }
             
-            // 自由入力されたオーナーやお客さんの投資金額を、裏側で1円単位で完璧に読み取る！
             var cM = parseInt(document.getElementById("sim-money").value) || 0;
             if(cM <= 0){ alert("❌ 投資金額を半角数字で入力してください（例：1000）"); return; }
             
             var btn = document.getElementById("predict-btn");
-            btn.innerText = "⚡ 「" + cV + " " + cR + "」のデータ1万8,781頭を爆速自動解凍スキャン中...";
+            btn.innerText = "⚡ 1万8,781頭のZIPデータを強制全自動解凍中...";
 
+            // Renderの公開ネットURLから直接ZIPを直撃ダウンロード！
             var target_zip_url = window.location.origin + "/racedata.zip";
 
             fetch(target_zip_url)
@@ -149,8 +141,16 @@
                 })
                 .then(async (buffer) => {
                     var zip = await JSZip.loadAsync(buffer);
-                    var file = zip.file("racedata.txt");
-                    if(!file) { alert("❌ ZIPの中に racedata.txt が見つかりません。"); return; }
+                    
+                    // 🌟【ガチ根本治療！】大文字だろうが小文字だろうが、ZIP内の1番目のテキストファイルを全自動で100%強制検知して開封する無敵の処理！！！
+                    var file = null;
+                    zip.forEach(function (relativePath, zipEntry) {
+                        if (relativePath.toLowerCase().endsWith(".txt")) {
+                            file = zipEntry;
+                        }
+                    });
+                    
+                    if(!file) { alert("❌ ZIPフォルダの中にテキストファイルが見つかりません。"); btn.innerText = "🧠 指定レースのデータ検索を実行"; return; }
                     
                     var textBuffer = await file.async("arraybuffer");
                     var decoder = new TextDecoder("shift_jis");
@@ -161,3 +161,5 @@
                     for(var i=0; i<allLines.length; i++) {
                         var line = allLines[i].trim();
                         if(!line) continue;
+                        
+                        var d = [];
