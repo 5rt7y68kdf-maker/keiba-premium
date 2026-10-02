@@ -1,318 +1,258 @@
-/* 🌪️【JRA競馬ダッシュボード 高コントラスト＆グリッド枠分け 完全連動 CSS style.css】 */
+/* 🌪️【KUINA AI RACING ANALYTICS - 高精度競走馬分析＆展開予測エンジン CSS】 */
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    background-color: #0d0d0d;
+    font-family: 'Segoe UI', 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
+    background-color: #080808;
     color: #e2e8f0;
     margin: 0;
-    padding: 12px;
+    padding: 16px 8px;
     text-align: center;
+    -webkit-font-smoothing: antialiased;
 }
 
 .container {
-    max-width: 650px;
+    max-width: 680px;
     margin: 0 auto;
-    background: #141414;
-    padding: 18px;
-    border-radius: 16px;
+    background: #121212;
+    padding: 24px 18px;
+    border-radius: 20px;
     border: 1px solid #d4af37;
-    box-shadow: 0 10px 35px rgba(212, 175, 55, 0.18);
+    box-shadow: 0 10px 40px rgba(212, 175, 55, 0.25);
+    box-sizing: border-box;
 }
 
 h1 {
-    font-size: 1.35rem;
-    color: #d4af37;
-    margin: 0 0 12px 0;
-    font-weight: 800;
-    letter-spacing: 0.5px;
+    font-size: 1.6rem;
+    color: #ffd700;
+    margin: 0 0 4px 0;
+    font-weight: 900;
+    letter-spacing: 1.5px;
+    text-shadow: 0 0 12px rgba(255, 215, 0, 0.4);
+    font-family: 'Montserrat', 'Segoe UI', sans-serif;
 }
 
 .subtitle {
     text-align: center;
+    font-size: 0.85rem;
+    color: #d4af37;
+    margin-bottom: 22px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.selector-box {
+    text-align: left;
+    background: #181818;
+    padding: 18px;
+    border-radius: 14px;
+    border: 1px solid #2d2d2d;
+    box-shadow: inset 0 2px 8px rgba(0,0,0,0.5);
+    margin-bottom: 20px;
+}
+
+.form-label {
+    display: block;
     font-size: 0.8rem;
-    color: #b89635;
-    margin-bottom: 16px;
-    font-weight: 600;
+    color: #d4af37;
+    font-weight: bold;
+    margin-bottom: 6px;
 }
 
-/* --- コントロール＆ソートバー --- */
-.control-bar {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    justify-content: space-between;
-    align-items: center;
-    background: #1a1a1a;
-    padding: 10px 12px;
+.select-input, .text-input {
+    width: 100%;
+    padding: 12px;
+    font-size: 0.95rem;
     border-radius: 10px;
-    border: 1px solid #333;
-    margin-bottom: 12px;
+    border: 1px solid #3d3d3d;
+    background: #0d0d0f;
+    color: #ffffff;
+    box-sizing: border-box;
+    margin-bottom: 14px;
+    text-align: center;
+    font-weight: bold;
+    outline: none;
+    transition: all 0.2s ease;
 }
 
-.sort-group {
+.select-input:focus, .text-input:focus {
+    border-color: #ffd700;
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
+}
+
+.select-input {
+    -webkit-appearance: none;
+    cursor: pointer;
+}
+
+.btn-predict {
+    width: 100%;
+    background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+    color: #ffffff;
+    border: 1px solid #ef4444;
+    padding: 15px;
+    font-size: 1.1rem;
+    font-weight: 800;
+    border-radius: 10px;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(220, 38, 38, 0.35);
+    transition: all 0.2s ease;
+    letter-spacing: 1px;
+}
+
+.btn-predict:hover {
+    background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+    box-shadow: 0 6px 22px rgba(220, 38, 38, 0.55);
+}
+
+.btn-predict:active {
+    transform: translateY(2px);
+    box-shadow: none;
+}
+
+.sort-box {
     display: flex;
-    gap: 6px;
+    justify-content: center;
+    gap: 8px;
+    margin: 18px 0 14px 0;
+    flex-wrap: wrap;
 }
 
 .sort-btn {
-    background: #262626;
-    color: #a3a3a3;
-    border: 1px solid #404040;
-    padding: 6px 10px;
-    font-size: 0.78rem;
-    font-weight: bold;
-    border-radius: 6px;
+    background: #181818;
+    border: 1px solid #3a3a3a;
+    color: #aaaaaa;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 700;
     cursor: pointer;
     transition: all 0.2s ease;
 }
 
-.sort-btn.active {
-    background: linear-gradient(135deg, #d4af37 0%, #a88322 100%);
-    color: #000;
-    border-color: #fef08a;
-    box-shadow: 0 2px 8px rgba(212, 175, 55, 0.4);
+.sort-btn:hover, .sort-btn.active {
+    background: linear-gradient(135deg, #ffd700 0%, #d4af37 100%);
+    color: #000000;
+    border-color: #ffd700;
+    font-weight: 900;
+    box-shadow: 0 2px 10px rgba(212, 175, 55, 0.4);
 }
 
-.toggle-detail-btn {
-    background: #1e293b;
-    color: #38bdf8;
-    border: 1px solid #0284c7;
-    padding: 6px 12px;
-    font-size: 0.78rem;
-    font-weight: bold;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.toggle-detail-btn.active {
-    background: #0284c7;
-    color: #ffffff;
-    box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
-}
-
-/* --- レース出馬表テーブル (厳格な枠分けグリッド構造) --- */
 .table-wrapper {
     overflow-x: auto;
-    border-radius: 10px;
-    border: 1px solid #333;
-    background: #111;
+    border-radius: 12px;
+    border: 1px solid #2d2d2d;
+    background: #101012;
+    margin-top: 12px;
 }
 
 table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.83rem;
-    color: #f1f5f9;
+    font-size: 0.85rem;
+    color: #e2e8f0;
+    table-layout: fixed;
+}
+
+th, td {
+    padding: 10px 4px;
+    border: 1px solid #262626;
+    text-align: center;
+    vertical-align: middle;
+    word-wrap: break-word;
+    box-sizing: border-box;
 }
 
 th {
-    background-color: #1f1f1f;
-    color: #d4af37;
-    font-weight: bold;
-    padding: 10px 4px;
-    border-bottom: 2px solid #444;
-    border-right: 1px solid #2a2a2a;
-    text-align: center;
+    background-color: #1a1a1c;
+    color: #ffd700;
+    font-weight: 800;
+    font-size: 0.8rem;
+    border-bottom: 2px solid #3d3d3d;
     white-space: nowrap;
 }
 
-th:last-child {
-    border-right: none;
+/* カラム幅指定で横ズレを完全防止 */
+th:nth-child(1), td:nth-child(1) { width: 17%; } /* 枠-馬 */
+th:nth-child(2), td:nth-child(2) { width: 15%; } /* AI印 */
+th:nth-child(3), td:nth-child(3) { width: 23%; } /* 競走馬名 */
+th:nth-child(4), td:nth-child(4) { width: 17%; } /* 騎手 */
+th:nth-child(5), td:nth-child(5) { width: 15%; } /* 調教師 */
+th:nth-child(6), td:nth-child(6) { width: 13%; } /* オッズ */
+
+tr:nth-child(even) {
+    background-color: #141416;
 }
 
-td {
-    padding: 10px 4px;
-    border-bottom: 1px solid #262626;
-    border-right: 1px solid #262626;
-    text-align: center;
-    vertical-align: middle;
+tr:hover {
+    background-color: #221e14;
 }
 
-td:last-child {
-    border-right: none;
-}
-
-/* --- 行スタイル & 選択時ハイライト --- */
-.horse-row {
-    cursor: pointer;
-    transition: background-color 0.15s ease;
-}
-
-.horse-row:hover {
-    background-color: #1c1c1c;
-}
-
-.horse-row.selected-row {
-    background-color: #241c0e !important;
-    border-left: 4px solid #d4af37;
-}
-
-/* --- 枠番＆馬番バッジ --- */
-.cell-waku-num {
-    white-space: nowrap;
-}
-
+/* JRA 枠色バッジ */
 .waku-badge {
     display: inline-block;
-    padding: 2px 5px;
-    font-size: 0.72rem;
+    padding: 3px 6px;
+    border-radius: 5px;
+    font-size: 0.76rem;
     font-weight: 800;
-    border-radius: 4px;
-    margin-right: 4px;
+    white-space: nowrap;
+    line-height: 1.2;
 }
 
-.waku-1 { background: #ffffff; color: #111111; border: 1px solid #ccc; }
-.waku-2 { background: #111111; color: #ffffff; border: 1px solid #555; }
-.waku-3 { background: #dc2626; color: #ffffff; }
-.waku-4 { background: #2563eb; color: #ffffff; }
-.waku-5 { background: #eab308; color: #111111; }
-.waku-6 { background: #16a34a; color: #ffffff; }
-.waku-7 { background: #ea580c; color: #ffffff; }
-.waku-8 { background: #ec4899; color: #ffffff; }
+.waku-1 { background: #f8fafc; color: #0f172a; border: 1px solid #cbd5e1; } /* 1枠: 白 */
+.waku-2 { background: #1e293b; color: #f8fafc; border: 1px solid #475569; } /* 2枠: 黒 */
+.waku-3 { background: #dc2626; color: #ffffff; } /* 3枠: 赤 */
+.waku-4 { background: #2563eb; color: #ffffff; } /* 4枠: 青 */
+.waku-5 { background: #eab308; color: #0f172a; } /* 5枠: 黄 */
+.waku-6 { background: #16a34a; color: #ffffff; } /* 6枠: 緑 */
+.waku-7 { background: #ea580c; color: #ffffff; } /* 7枠: 橙 */
+.waku-8 { background: #ec4899; color: #ffffff; } /* 8枠: 桃 */
 
-.num-text {
-    font-weight: bold;
-    color: #f8fafc;
+/* AI 推奨印バッジ */
+.ai-badge {
+    display: inline-block;
+    padding: 3px 6px;
+    border-radius: 5px;
+    font-size: 0.76rem;
+    font-weight: 800;
+    white-space: nowrap;
 }
 
-/* --- 馬名 & 騎手 --- */
-.horse-name-text {
-    font-weight: bold;
+.ai-honmei { background: linear-gradient(135deg, #dc2626, #b91c1c); color: #ffffff; box-shadow: 0 2px 6px rgba(220, 38, 38, 0.4); }
+.ai-taikou { background: #2563eb; color: #ffffff; }
+.ai-tanana { background: #d97706; color: #ffffff; }
+.ai-ana    { background: #7c3aed; color: #ffffff; box-shadow: 0 2px 6px rgba(124, 58, 237, 0.4); }
+.ai-renka  { background: #059669; color: #ffffff; }
+.ai-none   { color: #64748b; font-weight: normal; }
+
+/* 馬名 & 詳細情報 */
+.horse-name {
     font-size: 0.88rem;
+    font-weight: 800;
     color: #ffffff;
+    display: block;
+    line-height: 1.2;
 }
 
-.jockey-name-text {
-    color: #cbd5e1;
+.sub-info {
+    font-size: 0.7rem;
+    color: #94a3b8;
+    display: block;
+    line-height: 1.2;
+}
+
+.jockey-name {
+    font-weight: 700;
+    color: #f1f5f9;
     font-size: 0.82rem;
 }
 
-/* --- サブ情報バッジ (詳細表示時) --- */
-.sub-cell-info {
-    margin-top: 3px;
-}
-
-.badge-sub-info {
-    display: inline-block;
-    background: #1e293b;
-    color: #94a3b8;
-    font-size: 0.7rem;
-    padding: 1px 5px;
-    border-radius: 4px;
-    border: 1px solid #334155;
-}
-
-.badge-sub-trainer {
-    display: inline-block;
-    background: #1c1917;
-    color: #a8a29e;
-    font-size: 0.68rem;
-    padding: 1px 5px;
-    border-radius: 4px;
-    border: 1px solid #44403c;
-}
-
-/* --- オッズ & 人気 --- */
-.odds-value {
+.odds-val {
     font-weight: 800;
-    color: #f59e0b;
+    color: #ffd700;
     font-size: 0.88rem;
 }
 
 .pop-rank {
-    font-size: 0.7rem;
-    color: #94a3b8;
-    margin-left: 2px;
-}
-
-/* --- AI印バッジ --- */
-.ai-badge {
-    display: inline-block;
-    padding: 3px 7px;
-    font-size: 0.75rem;
-    font-weight: 800;
-    border-radius: 5px;
-    white-space: nowrap;
-}
-
-.badge-honmei { background: linear-gradient(135deg, #ef4444, #b91c1c); color: #fff; border: 1px solid #fca5a5; box-shadow: 0 0 6px rgba(239, 68, 68, 0.4); }
-.badge-taikou { background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: #fff; }
-.badge-tanana { background: linear-gradient(135deg, #f97316, #c2410c); color: #fff; }
-.badge-ana    { background: linear-gradient(135deg, #a855f7, #6b21a8); color: #fff; border: 1px solid #e9d5ff; box-shadow: 0 0 6px rgba(168, 85, 247, 0.5); }
-.badge-renka  { background: linear-gradient(135deg, #10b981, #047857); color: #fff; }
-.badge-none   { background: #262626; color: #737373; }
-
-/* --- 選択馬 拡張ドロワー (詳細枠分けカード) --- */
-.detail-drawer-cell {
-    padding: 10px !important;
-    background: #17130a !important;
-    border-bottom: 2px solid #d4af37 !important;
-}
-
-.selected-detail-card {
-    background: #1c180e;
-    border: 1px solid #d4af37;
-    border-radius: 8px;
-    padding: 12px;
-    text-align: left;
-}
-
-.card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid #332612;
-    padding-bottom: 8px;
-    margin-bottom: 10px;
-}
-
-.card-title {
-    font-size: 0.92rem;
-    color: #fef08a;
-}
-
-.card-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-    margin-bottom: 10px;
-}
-
-.grid-box {
-    background: #0f0d08;
-    padding: 6px 10px;
-    border-radius: 6px;
-    border: 1px solid #2d2311;
-}
-
-.grid-box .lbl {
-    display: block;
     font-size: 0.68rem;
-    color: #a1a1aa;
-}
-
-.grid-box .val {
-    display: block;
-    font-size: 0.82rem;
-    font-weight: bold;
-    color: #f4f4f5;
-}
-
-.grid-box .gold-txt {
-    color: #f59e0b;
-}
-
-.card-footer-ai {
-    background: #261a0c;
-    border: 1px dashed #d4af37;
-    padding: 8px 10px;
-    border-radius: 6px;
-    font-size: 0.78rem;
-    color: #fef08a;
-}
-
-.ai-lbl {
-    font-weight: bold;
-    color: #f59e0b;
+    color: #94a3b8;
 }
