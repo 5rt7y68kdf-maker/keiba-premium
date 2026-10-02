@@ -1,115 +1,115 @@
-# -*- coding: utf-8 -*-
-import os
-import zipfile
-import sys
-from flask import Flask, jsonify, request
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>JRA中央競馬 AI出馬表デバッグ版</title>
+    <style>
+        body { font-family: sans-serif; background-color: #0a0a0a; color: #dddddd; margin: 0; padding: 10px; text-align: center; }
+        .container { max-width: 550px; margin: 0 auto; background: #151515; padding: 20px; border-radius: 20px; border: 1px solid #d4af37; }
+        .select-input, .text-input { width: 100%; padding: 12px; font-size: 1rem; margin-bottom: 15px; background: #111; color: #fff; box-sizing: border-box; }
+        .btn-predict { width: 100%; background: #e53e3e; color: white; padding: 14px; font-size: 1.1rem; font-weight: bold; cursor: pointer; }
+        .prediction-box { background: #1c140c; border: 2px solid #dc2626; padding: 15px; margin-top: 20px; text-align: left; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+        th, td { padding: 12px 4px; border-bottom: 1px solid #333; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔮 JRA中央競馬 AI出馬表（デバッグ検証版）</h1>
+        <div class="selector-box">
+            <input type="date" id="sim-date" class="select-input">
+            <select id="sim-venue" class="select-input">
+                <option value="">-- 競馬場を選択 --</option>
+                <option value="東京">東京</option>
+                <option value="中山">中山</option>
+                <option value="京都">京都</option>
+                <option value="阪神">阪神</option>
+            </select>
+            <select id="sim-race" class="select-input">
+                <option value="">-- レース番号を選択 --</option>
+                <option value="11R">11R</option>
+            </select>
+            <select id="sim-bias" class="select-input">
+                <option value="フラット">フラット</option>
+            </select>
+            <select id="sim-ticket" class="select-input">
+                <option value="1">単勝馬券</option>
+            </select>
+            <input type="tel" id="sim-money" class="text-input" placeholder="投資金額（例：1000）">
+            
+            <button id="predict-btn" class="btn-predict" onclick="searchJraDebug()">🧠 指定レースのデータ検索を実行</button>
+        </div>
 
-app = Flask(__name__)
+        <div class="prediction-box">
+            <table>
+                <thead>
+                    <tr><th>枠-馬</th><th>競走馬名</th><th>騎手</th><th>オッズ</th></tr>
+                </thead>
+                <tbody id="predict-tbody">
+                    <tr><td colspan="4" style="color:#666; text-align: center;">ここに結果が表示されます</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
 
-# インデックス保持用
-RACE_INDEX = {}
+    <script>
+        function searchJraDebug() {
+            // 🟥 【デバッグ1】ボタン押下・発火チェック
+            console.log("➔ [1/7] [フロント] 検索ボタンがクリックされました（発火成功）");
+            alert("➔ [1/7] ボタン押下を検知しました。これよりAPIへ通信を試みます。");
 
-def build_race_database_index_debug():
-    """
-    サーバー起動時にracedata.zipの読み込みおよび
-    インデックス作成処理のどこで止まるかを完全に追跡する関数
-    """
-    global RACE_INDEX
-    RACE_INDEX = {}
-    
-    zip_path = "racedata.zip"
-    print("➔ [4/7-A] [Python] ZIP/インデックス読み込み処理を開始します。")
-    print(f"🔍 [Python] カレントディレクトリ内のファイル一覧: {os.listdir('.')}")
-    
-    if not os.path.exists(zip_path):
-        print(f"❌ [Python] 致命的エラー: {zip_path} がサーバー上に物理的に存在しません。")
-        return
+            var rawDate = document.getElementById("sim-date").value;
+            var cG = rawDate.replace(/-/g, "").replace(/\//g, "").trim();
+            var cV = document.getElementById("sim-venue").value;
+            var cR = document.getElementById("sim-race").value;
+            var cM = parseInt(document.getElementById("sim-money").value) || 0;
 
-    print(f"⭕️ [Python] {zip_path} の存在を確認しました。これより展開を試みます。")
-    
-    try:
-        # 🟥 【デバッグ4】ZIPファイル読み込み開始チェック
-        print("➔ [4/7-B] [Python] zipfile.ZipFile を開きます。")
-        with zipfile.ZipFile(zip_path, 'r') as z:
-            
-            # 🟥 【デバッグ5】ZIP内のファイル認識チェック
-            print("➔ [5/7-A] [Python] ZIP内部のファイルリストを走査します。")
-            file_list = z.namelist()
-            print(f"📦 [Python] ZIP内ファイル一覧: {file_list}")
-            
-            target_txt = None
-            for name in file_list:
-                if name.lower().endswith('.txt'):
-                    target_file = name
-                    break
-            
-            if not target_file:
-                print("❌ [Python] エラー: ZIPの中にテキストファイル(.txt)が1つも見つかりません。")
-                return
-                
-            print(f"⭕️ [Python] 解凍対象テキストファイルを特定: {target_file}")
-            raw_bytes = z.read(target_file)
-            print(f"📡 [Python] ファイルの読み込みに成功しました（バイト数: {len(raw_bytes)} bytes）")
-            
-            # デコード処理
-            text_content = raw_bytes.decode('shift_jis', errors='ignore')
-            lines = text_content.splitlines()
-            print(f"📡 [Python] テキストデータの行分割に成功（総行数: {len(lines)} 行）")
-            
-            # インデックス構築
-            print("➔ [5/7-B] [Python] メモリへのデータインデックスの構築を開始します。")
-            success_count = 0
-            for line in lines:
-                line_clean = line.strip()
-                if not line_clean: continue
-                
-                # カンマ区切り
-                d = [x.strip() for x in line_clean.split(',')]
-                if len(d) < 7: continue
-                
-                try:
-                    date_clean = d[0].replace("-", "").replace("/", "").strip()
-                    venue_clean = d[1].strip()
-                    race_clean = d[2].upper().replace("R", "").strip() + "R"
-                    
-                    index_key = f"{date_clean}_{venue_clean}_{race_clean}"
-                    
-                    horse_data = {
-                        "waku": d[3], "num": d[4], "name": d[5], "jockey": d[6], "odds": d[7] if len(d) > 7 else "0.0"
+            if(!rawDate || !cV || !cR || cM <= 0) {
+                console.log("⚠️ [フロント] 入力値が空、または不完全です。処理を中断します。");
+                alert("⚠️ 入力項目（日付・場所・レース・金額）を正しく埋めてください。");
+                return;
+            }
+
+            // 🟥 【デバッグ2】API到達・送信直前チェック
+            var api_url = window.location.origin + "/api/predict?date=" + cG + "&venue=" + cV + "&race=" + cR;
+            console.log("➔ [2/7] [フロント] Flaskの予測APIへリクエストを送信します。ターゲットURL: " + api_url);
+
+            fetch(api_url)
+                .then(res => {
+                    console.log("➔ [フロント] サーバーからHTTPレスポンスを受信。ステータスコード: " + res.status);
+                    if (!res.ok) {
+                        console.log("❌ [フロント] サーバーがエラー（500等）を返しました。");
+                        throw new Error("HTTPエラー " + res.status);
                     }
-                    
-                    if index_key not in RACE_INDEX:
-                        RACE_INDEX[index_key] = []
-                    RACE_INDEX[index_key].append(horse_data)
-                    success_count += 1
-                except Exception as e:
-                    continue
-                    
-            print(f"🏆 [Python] インデックス構築処理が完了しました。正常登録馬数: {success_count}頭, レースキー数: {len(RACE_INDEX)}")
-            
-    except Exception as e:
-        print(f"❌ [Python] ZIP処理中に例外エラーが発生しました。エラー内容: {str(e)}")
+                    return res.json();
+                })
+                .then(matched_horses => {
+                    // 🟥 【デバッグ6】検索結果取得チェック
+                    console.log("➔ [6/7] [フロント] APIから結果データを受信しました。受信件数: " + (matched_horses ? matched_horses.length : 0));
+                    console.log("➔ 受信データの中身: ", matched_horses);
 
-# サーバー起動時にログ出力しながら構築を走らせる
-build_race_database_index_debug()
+                    if (!matched_horses || matched_horses.length === 0) {
+                        console.log("⚠️ [フロント] 該当する馬データが0件です（空配列）");
+                        document.getElementById("predict-tbody").innerHTML = "<tr><td colspan='4' style='color:#ecc94b;'>一致するデータがありません（0件返却）</td></tr>";
+                        return;
+                    }
 
-@app.route('/api/predict', methods=['GET'])
-def get_prediction():
-    # 🟥 【デバッグ3】Flask側の検索ルート呼び出しチェック
-    print("➔ [3/7] [Python] Flask APIがリクエストを検知しました（到達成功）")
-    
-    cond_date = request.args.get('date', '').strip()
-    cond_venue = request.args.get('venue', '').strip()
-    cond_race = request.args.get('race', '').upper().replace("R", "").strip() + "R"
-    
-    search_key = f"{cond_date}_{cond_venue}_{cond_race}"
-    print(f"🔍 [Python] 検索を実行します。生成された検索キー: {search_key}")
-    
-    results = RACE_INDEX.get(search_key, [])
-    print(f"➔ [5/7-C] [Python] 検索完了。メモリから抽出された馬データ件数: {len(results)}")
-    
-    return jsonify(results)
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=port)
+                    // 🟥 【デバッグ7】画面へ返却・レンダリング処理チェック
+                    console.log("➔ [7/7] [フロント] 画面（HTMLテーブル）への差し替え処理を開始します。");
+                    var html = "";
+                    for (var j = 0; j < matched_horses.length; j++) {
+                        var h = matched_horses[j];
+                        html += `<tr><td>${h.waku}枠${h.num}番</td><td><b>${h.name}</b></td><td>${h.jockey}</td><td>${h.odds}倍</td></tr>`;
+                    }
+                    document.getElementById("predict-tbody").innerHTML = html;
+                    console.log("🎯 [フロント] 画面表示処理が100%エラーなく通過完了しました。");
+                })
+                .catch(err => {
+                    console.log("❌ [フロント] fetch通信、またはデータ解析中に致命的クラッシュが発生しました。原因: ", err);
+                    alert("❌ フロントエンド処理内でクラッシュが発生しました。ブラウザの「検証（F12）」画面の Console タブを確認してください。\nエラー内容: " + err.message);
+                });
+        }
+    </script>
+</body>
+</html>
