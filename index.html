@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <title>JRA中央競馬 AI出馬表プレミアム製品版</title>
+    <title>JRA中央競馬 AI出馬表プレミアムデバッグ版</title>
     <!-- 🚀【ZIP解凍の核心】ZIPファイルをブラウザ上で全自動解凍するための公式部品（JSZip）をネットからガチ結合！ -->
     <script src="https://cloudflare.com"></script>
     <style>
@@ -24,7 +24,7 @@
 <body>
     <div class="container">
         <h1>🔮 AI最高峰出馬表＆全馬券シミュレーター</h1>
-        <div class="subtitle">JRAプレミアム過去ログ・ZIP解凍追跡検証版</div>
+        <div class="subtitle">JRAプレミアム過去ログ・1万8,781頭完全連動【真のデバッグ追跡版】</div>
         
         <div class="selector-box">
             <p style="font-size:0.8rem; font-weight:bold; color:#aaa; margin: 4px 0;">➔ ① 開催年月日を選択してください</p>
@@ -37,6 +37,12 @@
                 <option value="中山">中山</option>
                 <option value="京都">京都</option>
                 <option value="阪神">阪神</option>
+                <option value="小倉">小倉</option>
+                <option value="新潟">新潟</option>
+                <option value="福島">福島</option>
+                <option value="中京">中京</option>
+                <option value="札幌">札幌</option>
+                <option value="函館">函館</option>
             </select>
             
             <p style="font-size:0.8rem; font-weight:bold; color:#aaa; margin: 4px 0;">➔ ③ レース番号を選択してください</p>
@@ -44,140 +50,122 @@
                 <option value="" selected>-- レース番号を選択してください --</option>
                 <option value="1R">1R</option>
                 <option value="2R">2R</option>
+                <option value="3R">3R</option>
+                <option value="4R">4R</option>
+                <option value="5R">5R</option>
+                <option value="6R">6R</option>
+                <option value="7R">7R</option>
+                <option value="8R">8R</option>
+                <option value="9R">9R</option>
+                <option value="10R">10R</option>
                 <option value="11R">11R</option>
+                <option value="12R">12R</option>
             </select>
             
-            <p style="font-size:0.8rem; font-weight:bold; color:#aaa; margin: 4px 0;">➔ ④ 馬場傾向を選択</p>
+            <p style="font-size:0.8rem; font-weight:bold; color:#aaa; margin: 4px 0;">➔ ④ トラックバイアス（馬場傾向）を選択</p>
             <select id="sim-bias" class="select-input">
                 <option value="フラット">フラット（標準傾向・実力通り）</option>
             </select>
             
             <p style="font-size:0.8rem; font-weight:bold; color:#aaa; margin: 4px 0;">➔ ⑤ 購入する馬券のジャンル</p>
             <select id="sim-ticket" class="select-input">
-                <option value="1">単勝馬券</option>
+                <option value="1">単勝馬券 (1着当て・単勝狙い)</option>
             </select>
             
             <p style="font-size:0.8rem; font-weight:bold; color:#aaa; margin: 4px 0;">➔ ⑥ 投資金額を入力してください（円）</p>
-            <input type="tel" id="sim-money" class="text-input" value="1000">
+            <input type="tel" id="sim-money" class="text-input" placeholder="金額を自由に入力" value="1000">
             
             <button id="predict-btn" class="btn-predict" onclick="loadAndUnzipJraDatabase()">🧠 指定レースのデータ検索を実行</button>
         </div>
-
+        <div class="result-report-card" id="report-card" style="display: none;">
+            <div style="font-weight: bold; color: #d4af37; border-bottom: 1px solid #444; padding-bottom: 5px;">📊 馬券投資シミュレーション結果</div>
+            <div class="report-grid">
+                <div class="report-item">総投資金額<div id="res-invest" style="font-weight:bold; margin-top:4px;">0円</div></div>
+                <div class="report-item">総払い戻し金額<div id="res-return" style="font-weight:bold; margin-top:4px;">0円</div></div>
+                <div class="report-item" style="grid-column: span 2; background: #000; border: 1px solid #d4af37;">実際の純収支（利益）<div id="res-pure" style="font-size: 1.4rem; color: #dc2626; font-weight:900;">+0円</div></div>
+            </div>
+        </div>
         <div class="prediction-box">
-            <div style="color:#d4af37; font-weight:bold; margin-bottom:10px;">📋 検索結果一覧</div>
+            <div style="color:#d4af37; font-weight:bold; margin-bottom:10px;">📋 AI推奨判定・確定出馬表データ</div>
             <table>
                 <thead>
-                    <tr><th>枠-馬</th><th>競走馬名</th><th>騎手</th><th>オッズ</th></tr>
+                    <tr><th>枠-馬</th><th>🤖 AI推奨印</th><th>競走馬名</th><th>騎手</th><th>オッズ</th></tr>
                 </thead>
                 <tbody id="predict-tbody">
-                    <tr><td colspan="4" style="color:#666; padding:20px 0; text-align: center;">条件を指定し、上の赤いボタンを押してください</td></tr>
+                    <tr><td colspan="5" style="color:#666; padding:20px 0; text-align: center;">条件を指定し、上の赤いボタンを押してください</td></tr>
                 </tbody>
             </table>
         </div>
     </div>
-
     <script>
         function loadAndUnzipJraDatabase() {
-            // 🟥 【追跡1】ボタンクリックチェック
-            alert("➔ [ステップ1] 検索ボタンのクリックイベント発火に成功しました！");
+            // 🟥 【追跡1】ボタンのクリックイベント発火チェック
+            alert("➔ [1/7] [ボタン押下] 成功！プログラムの1行目が正常に始動しました。");
 
             var rawDate = document.getElementById("sim-date").value;
             if(!rawDate){ alert("❌ 日付を選択してください"); return; }
             var cG = rawDate.replace(/-/g, "").replace(/\//g, "").trim();
+            
             var cV = document.getElementById("sim-venue").value;
+            if(!cV){ alert("❌ 競馬場を選択してください"); return; }
+            
             var cR = document.getElementById("sim-race").value;
+            if(!cR){ alert("❌ レース番号を選択してください"); return; }
+            
             var cM = parseInt(document.getElementById("sim-money").value) || 0;
+            if(cM <= 0){ alert("❌ 投資金額を半角数字で入力してください"); return; }
             
             var btn = document.getElementById("predict-btn");
-            btn.innerText = "解凍検証中...";
+            btn.innerText = "⚡ デバッグ検証中...";
 
-            // 🚀 Publicフォルダ内の相対パスを直接指定 [1.26]
+            // 🟥 【追跡2】ZIPファイルのダウンロード通信（fetch）の開始
             var target_zip_url = "racedata.zip";
-            
-            // 🟥 【追跡2】ZIP取得通信（fetch）の開始
-            alert("➔ [ステップ2] これより、同じサーバー内にある 'racedata.zip' の吸い上げ電波（fetch）を飛ばします。");
+            alert("➔ [2/7] [API到達] 成功！これより同じ部屋にある '" + target_zip_url + "' へダウンロード電波（fetch）を飛ばします。");
 
             fetch(target_zip_url, { method: "GET", cache: "no-cache" })
                 .then(response => {
                     // 🟥 【追跡3】ZIPの存在・通信応答チェック
-                    alert("➔ [ステップ3] サーバーから応答がありました！\n通信結果の成否（okかどうか）: " + response.ok + "\nステータスコード: " + response.status);
+                    alert("➔ [3/7] [検索開始] 成功！サーバーから電波が戻ってきました！\n■ 通信成功フラグ(ok): " + response.ok + "\n■ HTTPステータス: " + response.status);
                     if(!response.ok) { 
-                        alert("❌ 警告: サーバー上に 'racedata.zip' が見つからないか、読み込み拒否されました（404等）。ファイルが本当に存在するか確認してください。");
-                        throw new Error("ZIP取得失敗"); 
+                        alert("❌ 警告: サーバー上に 'racedata.zip' が実在しないか、公開設定が漏れています（404等）。処理をストップします。");
+                        throw new Error("ZIPファイルが読み込めません"); 
                     }
                     return response.arrayBuffer();
                 })
                 .then(async (buffer) => {
-                    // 🟥 【追跡4】JSZip解凍命令の直撃チェック
-                    alert("➔ [ステップ4] ZIPのデータ（バイナリ）の吸い込みに成功しました！\nこれより、JSZipライブラリにデータをぶち込んで『強制解凍・開封』を執行します。");
+                    // 🟥 【追跡4】ZIP解凍・インデックス読み込み開始チェック
+                    alert("➔ [4/7] [ZIP/インデックス読み込み開始] 成功！\nZIPのバイナリデータの吸い上げに成功しました。これよりJSZipでフォルダの解凍を執行します。");
                     
                     var zip;
                     try {
                         zip = await JSZip.loadAsync(buffer);
-                        alert("➔ [ステップ5] ZIPフォルダのパスワード・破損の壁を完全突破！箱を開けることに成功しました！");
+                        alert("➔ [解凍成功] ZIPフォルダの解読に成功しました！これより中身のファイル名を自動検知します。");
                     } catch(zipErr) {
-                        alert("❌ 警告: ZIPファイルそのものが破損しているか、JSZipが解凍に失敗しました。原因: " + zipErr.message);
-                        btn.innerText = "🧠 指定レースのデータ検索を実行";
-                        return;
+                        alert("❌ [解凍失敗] 警告: ZIPデータの解凍（JSZip）の瞬間にプログラムがクラッシュしました。原因: " + zipErr.message);
+                        throw zipErr;
                     }
                     
-                    // 🟥 【追跡5】ZIP内のテキストファイル認識チェック
                     var file = null;
-                    var innerFiles = [];
+                    var zipFiles = [];
                     zip.forEach(function (relativePath, zipEntry) {
-                        innerFiles.push(relativePath);
-                        if (relativePath.toLowerCase().endsWith(".txt")) {
+                        zipFiles.push(relativePath);
+                        if (relativePath.toLowerCase().endsWith(".txt") || relativePath.toLowerCase().indexOf(".txt") !== -1) {
                             file = zipEntry;
                         }
                     });
                     
-                    alert("📦 ZIPの中に入っていたファイル名一覧:\n" + innerFiles.join("\n"));
+                    alert("📦 [ZIP内ファイル検知] フォルダの中に以下のファイルを発見しました:\n" + zipFiles.join("\n"));
                     
                     if(!file) { 
-                        alert("❌ 警告: ZIPの箱は開きましたが、その中に '.txt' の生データファイルが1文字も見つかりません！"); 
-                        btn.innerText = "🧠 指定レースのデータ検索を実行"; 
-                        return; 
+                        alert("❌ 警告: ZIPフォルダは開きましたが、その中にテキストファイル(.txt)が1枚も見つかりません！"); 
+                        btn.innerText = "🧠 指定レースのデータ検索を実行"; return; 
                     }
                     
-                    // 🟥 【追跡6】テキスト抽出・文字コード変換チェック
-                    alert("➔ [ステップ6] ZIP内にあるテキストファイル '" + file.name + "' を検知。中身の文字を Shift-JIS から日本語に翻訳します。");
+                    // 🟥 【追跡5】テキスト抽出・文字コード変換チェック
+                    alert("➔ [5/7] [検索実行] 成功！テキストファイル '" + file.name + "' を確認。\nShift-JISの文字化けを完全解読して日本語テキストへ変換します。");
                     
                     var textBuffer = await file.async("arraybuffer");
                     var decoder = new TextDecoder("shift_jis");
                     var text = decoder.decode(textBuffer);
                     var allLines = text.split(/\r?\n/);
                     
-                    alert("➔ [ステップ7] 翻訳に大成功！データが文字として読み込めました。\n生データの全行数: " + allLines.length + " 行\n（これより馬名の一致検索を開始します）");
-                    
-                    var matched_horses = [];
-                    for(var i=0; i<allLines.length; i++) {
-                        var line = allLines[i].trim();
-                        if(!line) continue;
-                        
-                        var d = line.split(/[\s,]+/);
-                        if(d.length < 7) continue;
-                        
-                        var file_date = d[0].replace(/-/g,"").replace(/\//g,"").trim();
-                        if(file_date.length === 6) { file_date = "20" + file_date; }
-                        var file_venue = d[1].trim();
-                        var file_race = d[2].toUpperCase().replace("R","").trim() + "R";
-                        
-                        if(file_date === cG && file_venue === cV && file_race === cR) {
-                            matched_horses.push({
-                                waku: d[3] || 0, num: d[4] || 0, name: d[5] || "不明", jockey: d[6] || "不明", odds: d[7] || "0.0"
-                            });
-                        }
-                    }
-
-                    alert("🎯 検索完了！\n選択された条件（" + cG + " " + cV + " " + cR + "）と一致した競走馬の数: " + matched_horses.length + " 頭");
-
-                    if (matched_horses.length === 0) {
-                        alert("⚠️ 警告: ZIPの中身は100%正常に読めましたが、選択された日付・場所・レースに一致する行が1行もありません！データの日程を確認してください。\n【検証用例】2026-05-03 ➔ 東京 ➔ 11R");
-                        btn.innerText = "🧠 指定レースのデータ検索を実行"; return;
-                    }
-
-                    matched_horses.sort((a, b) => a.num - b.num);
-
-                    var html = "";
-                    for (var j = 0; j < matched_horses.length; j++) {
-                        var h = matched_horses[j];
