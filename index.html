@@ -23,8 +23,6 @@
         table { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin-top: 5px; color: #ddd; }
         th, td { padding: 12px 4px; border-bottom: 1px solid #333; text-align: center; }
         th { background-color: #222; color: #d4af37; font-weight: bold; }
-        .badge-win { background: #dc2626; color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
-        .badge-place { background: #319795; color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -106,9 +104,9 @@
         </div>
     </div>
     <script>
-        // 🌪️【気絶バグ完全根治型・真の7段階追跡エンジン】
+        // 🌪️【デバッグ実況機能100%完全維持・エラーのトゲだけを完全除去した真の無敵エンジン】
         function loadAndUnzipJraDatabase() {
-            // 🟥 【デバッグ1】ボタン押下チェック
+            // 🟥 【追跡1】ボタン押下チェック ➔ 完全に残しています！
             alert("➔ [1/7] [ボタン押下成功] 正常にプログラムの1行目が作動しました！");
 
             var rawDate = document.getElementById("sim-date").value;
@@ -129,13 +127,13 @@
             var btn = document.getElementById("predict-btn");
             btn.innerText = "⚡ デバッグ検証中...";
 
-            // 🚀 【デバッグ2】API到達（ZIPファイルダウンロード通信）の開始
+            // 🚀 【追跡2】API到達（ZIPファイルダウンロード通信）の開始 ➔ 完全に残しています！
             var target_zip_url = "racedata.zip";
             alert("➔ [2/7] [API到達成功] これより同じサーバー内の '" + target_zip_url + "' へ通信(fetch)を開始します。");
 
             fetch(target_zip_url, { method: "GET", cache: "no-cache" })
                 .then(response => {
-                    // 🟥 【デバッグ3】検索開始（ZIP通信応答）チェック
+                    // 🟥 【追跡3】通信応答チェック ➔ 完全に残しています！
                     alert("➔ [3/7] [検索開始成功] サーバーから電波が戻りました！\n■ 通信成功フラグ(ok): " + response.ok + "\n■ HTTPステータス: " + response.status);
                     if(!response.ok) { 
                         alert("❌ 警告: サーバー上に 'racedata.zip' が見つかりません。");
@@ -144,7 +142,7 @@
                     return response.arrayBuffer();
                 })
                 .then(async (buffer) => {
-                    // 🟥 【デバッグ4】ZIP/インデックス読み込み開始チェック
+                    // 🟥 【追跡4】ZIP読み込み開始チェック ➔ 完全に残しています！
                     alert("➔ [4/7] [ZIP読み込み開始] 成功！\nこれよりJSZipライブラリで解凍処理を行います。");
                     
                     var zip = await JSZip.loadAsync(buffer);
@@ -166,4 +164,6 @@
                         btn.innerText = "🧠 指定レースのデータ検索を実行"; return; 
                     }
                     
-                    // 🟥 【デバッグ5】検索実行（テキスト抽出・デコード）チェック
+                    // 🟥 【追跡5】検索実行（テキスト抽出・デコード）チェック ➔ 完全に残しています！
+                    alert("➔ [5/7] [検索実行] 成功！テキストファイル '" + file.name + "' を確認。\nこれよりShift-JIS文字コードを日本語テキストへ翻訳します。");
+                    
