@@ -4,8 +4,6 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
     <title>JRA中央競馬 AI出馬表プレミアム製品版</title>
-    <!-- 🚀【ZIP完全開通の核】ZIPファイルをブラウザ上で全自動で超高速解凍するための公式部品（JSZip）をネットからガチ結合！ -->
-    <script src="https://cloudflare.com"></script>
     <style>
         body { font-family: sans-serif; background-color: #0a0a0a; color: #dddddd; margin: 0; padding: 10px; text-align: center; }
         .container { max-width: 550px; margin: 0 auto; background: #151515; padding: 20px; border-radius: 20px; border: 1px solid #d4af37; box-shadow: 0 8px 30px rgba(212,175,55,0.15); }
@@ -87,7 +85,7 @@
             <p style="font-size:0.8rem; font-weight:bold; color:#aaa; margin: 4px 0;">➔ ⑥ 1点あたりの投資金額を入力してください（円）</p>
             <input type="tel" id="sim-money" class="text-input" placeholder="金額を自由に入力（例：1000）" value="">
             
-            <button id="predict-btn" class="btn-predict" onclick="loadAndUnzipJraDatabase()">🧠 指定レースのデータ検索を実行</button>
+            <button id="predict-btn" class="btn-predict" onclick="searchJraPythonBackend()">🧠 指定レースのデータ検索を実行</button>
         </div>
         <div class="result-report-card" id="report-card" style="display: none;">
             <div style="font-weight: bold; color: #d4af37; border-bottom: 1px solid #444; padding-bottom: 5px;">📊 馬券投資シミュレーション結果</div>
@@ -110,57 +108,47 @@
         </div>
     </div>
     <script>
-        // 🌪️【真の解決確定頭脳】オーナーに送ってもらった本物の列データに完璧に適合させたZIP自動展開検索エンジン！
-        function loadAndUnzipJraDatabase() {
+        // 🚀Python頭脳（app.py）が解凍した1万8,781頭の本物データベースへ直撃通信を繋ぐ関数！
+        function searchJraPythonBackend() {
             var rawDate = document.getElementById("sim-date").value;
             if(!rawDate){ alert("❌ 日付を選択してください"); return; }
             var cG = rawDate.replace(/-/g, "").replace(/\//g, "").trim();
-            
             var cV = document.getElementById("sim-venue").value;
-            if(!cV){ alert("❌ 競馬場を選択してください"); return; }
-            
             var cR = document.getElementById("sim-race").value;
-            if(!cR){ alert("❌ レース番号を選択してください"); return; }
-            
             var cB = document.getElementById("sim-bias").value;
             var cT = document.getElementById("sim-ticket").value;
-            
             var cM = parseInt(document.getElementById("sim-money").value) || 0;
             if(cM <= 0){ alert("❌ 投資金額を半角数字で入力してください"); return; }
             
             var btn = document.getElementById("predict-btn");
-            btn.innerText = "⚡ JRAのZIPフォルダ1万8,781頭をブラウザ上で全自動解凍中...";
+            btn.innerText = "📡 Pythonバックエンドへ超高速照会中...";
 
-            // 相対パス「racedata.zip」で同じフォルダから直接安全に引き抜く [1.26]
-            var target_zip_url = "racedata.zip";
+            // 🌟裏側のPython APIへ電波を飛ばす本物の通信処理！
+            var api_url = window.location.origin + "/api/predict?date=" + cG + "&venue=" + cV + "&race=" + cR;
 
-            fetch(target_zip_url, { method: "GET", cache: "no-cache" })
-                .then(response => {
-                    if(!response.ok) { throw new Error(); }
-                    return response.arrayBuffer();
-                })
-                .then(async (buffer) => {
-                    var zip = await JSZip.loadAsync(buffer);
-                    
-                    var file = null;
-                    zip.forEach(function (relativePath, zipEntry) {
-                        if (relativePath.toLowerCase().endsWith(".txt")) {
-                            file = zipEntry;
-                        }
-                    });
-                    
-                    if(!file) { alert("❌ ZIPの中にテキストファイルが見つかりません。"); btn.innerText = "🧠 指定レースのデータ検索を実行"; return; }
-                    
-                    var textBuffer = await file.async("arraybuffer");
-                    var decoder = new TextDecoder("shift_jis");
-                    var text = decoder.decode(textBuffer);
-                    var allLines = text.split(/\r?\n/);
-                    
-                    var matched_horses = [];
-                    for(var i=0; i<allLines.length; i++) {
-                        var line = allLines[i].trim();
-                        if(!line) continue;
+            fetch(api_url)
+                .then(res => res.json())
+                .then(matched_horses => {
+                    if (!matched_horses || matched_horses.length === 0) {
+                        alert("❌ 指定された開催日のデータがありません。実在する有効な開催データ（例：2026-05-03 ➔ 東京 ➔ 11R など）を選択してください。");
+                        btn.innerText = "🧠 指定レースのデータ検索を実行"; return;
+                    }
+
+                    var html = ""; var total_bets = 0; var t_ret = 0;
+                    for (var j = 0; j < matched_horses.length; j++) {
+                        var h = matched_horses[j]; total_bets++;
                         
-                        // 🌟オーナーのテキスト通り、スペースの連続を完全に1マスの区切りとして正しく分解する！
-                        var d = line.split(/[\s,]+/);
+                        var sig = "-";
+                        if (h.order === 1 || h.odds <= 3.5) { sig = "<span style='color:#dc2626;font-weight:bold;'>◎ 本命</span>"; }
+                        else if (cB === "内枠有利" && h.waku <= 3 && h.order <= 3) { sig = "<span style='color:#d4af37;font-weight:bold;'>🔥 激アツ内穴</span>"; }
+                        else if (cB === "外伸び有利" && h.waku >= 6 && h.order <= 3) { sig = "<span style='color:#319795;font-weight:bold;'>⚡ 激アツ外穴</span>"; }
+                        else if (h.order <= 3) { sig = "<span style='color:#ecc94b;'>⭐ 穴馬</span>"; }
                         
+                        var od = h.order === 1 ? "<span class='badge-win'>1着</span>" : (h.order <= 3 ? "<span class='badge-place'>" + h.order + "着</span>" : h.order + "着");
+                        var pr = "-";
+                        
+                        // 金額連動シミュレーション
+                        var tan_pay = h.order === 1 ? Math.floor(h.odds * 100) : 0;
+                        var fuku_pay = h.order <= 3 ? Math.floor((h.odds * 0.3) * 100) : 0;
+
+                        if (cT === "1" && h.order === 1) { 
