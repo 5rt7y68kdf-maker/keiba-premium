@@ -12,7 +12,7 @@
         h1 { font-size: 1.4rem; color: #d4af37; margin: 0 0 15px 0; font-weight: bold; }
         .subtitle { text-align: center; font-size: 0.8rem; color: #aa8822; margin-bottom: 20px; font-weight: bold; }
         .selector-box { text-align: left; background: #1c1c1c; padding: 15px; border-radius: 12px; border: 1px solid #333; }
-        .select-input, .text-input { width: 100%; padding: 12px; font-size: 1rem; border-radius: 8px; border: 1px solid #444; background: #111; color: #fff; box-sizing: border-box; margin-bottom: 15px; text-align: center; font-weight: bold; }
+        .select-input { width: 100%; padding: 12px; font-size: 1rem; border-radius: 8px; border: 1px solid #444; background: #111; color: #fff; box-sizing: border-box; margin-bottom: 15px; text-align: center; font-weight: bold; -webkit-appearance: none; }
         .btn-predict { width: 100%; background: linear-gradient(135deg, #e53e3e 0%, #9b2c2c 100%); color: white; border: none; padding: 14px; font-size: 1.1rem; font-weight: bold; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 0 #5b1414; }
         .btn-predict:active { transform: translateY(2px); box-shadow: none; }
         .result-report-card { background: #2a2415; border: 1px solid #d4af37; padding: 15px; border-radius: 10px; margin-top: 20px; text-align: left; }
@@ -29,28 +29,79 @@
 <body>
     <div class="container">
         <h1>🔮 AI最高峰出馬表＆全馬券シミュレーター</h1>
-        <div class="subtitle">JRAプレミアムログ・1万8,781頭全レース完全リアルタイム連動検索製品版</div>
+        <div class="subtitle">JRAプレミアム過去ログ・1万8,781頭完全自走連動検索製品版</div>
         
         <div class="selector-box">
+            <!-- 🌟【嫌がらせ完全消滅】valueの初期値を完全に消去し、最初は完全な真っ白な空欄からスタートします！ -->
             <p style="font-size:0.8rem; font-weight:bold; color:#aaa; margin: 4px 0;">➔ ① 開催年月日を選択してください</p>
-            <input type="date" id="sim-date" class="text-input" value="2026-05-03">
-            <p style="font-size:0.8rem; font-weight:bold; color:#aaa; margin: 4px 0;">➔ ② 競馬場を入力（例: 東京 / 小倉）</p>
-            <input type="text" id="sim-venue" class="text-input" placeholder="東京 / 小倉" value="東京">
-            <p style="font-size:0.8rem; font-weight:bold; color:#aaa; margin: 4px 0;">➔ ③ レース番号を入力（例: 11R / 1R）</p>
-            <input type="text" id="sim-race" class="text-input" placeholder="例: 11R" value="11R">
+            <input type="date" id="sim-date" class="select-input" value="">
+            
+            <!-- 🌟【改善1】競馬場も勝手に東京を選ばず、「-- 未選択 --」の真っ白な状態からみんなが選べる仕様に変更！！！ -->
+            <p style="font-size:0.8rem; font-weight:bold; color:#aaa; margin: 4px 0;">➔ ② 競馬場を選択してください</p>
+            <select id="sim-venue" class="select-input">
+                <option value="" selected>-- 競馬場を選択してください --</option>
+                <option value="東京">東京</option>
+                <option value="中山">中山</option>
+                <option value="京都">京都</option>
+                <option value="阪神">阪神</option>
+                <option value="小倉">小倉</option>
+                <option value="新潟">新潟</option>
+                <option value="福島">福島</option>
+                <option value="中京">中京</option>
+                <option value="札幌">札幌</option>
+                <option value="函館">函館</option>
+            </select>
+            
+            <!-- 🌟【改善2】レース番号も勝手に11Rを選ばず、「-- 未選択 --」からみんながスマホで選べるように変更！！！ -->
+            <p style="font-size:0.8rem; font-weight:bold; color:#aaa; margin: 4px 0;">➔ ③ レース番号を選択してください</p>
+            <select id="sim-race" class="select-input">
+                <option value="" selected>-- レース番号を選択してください --</option>
+                <option value="1R">1R</option>
+                <option value="2R">2R</option>
+                <option value="3R">3R</option>
+                <option value="4R">4R</option>
+                <option value="5R">5R</option>
+                <option value="6R">6R</option>
+                <option value="7R">7R</option>
+                <option value="8R">8R</option>
+                <option value="9R">9R</option>
+                <option value="10R">10R</option>
+                <option value="11R">11R</option>
+                <option value="12R">12R</option>
+            </select>
+            
+            <!-- 🌟【改善3】トラックバイアス（内枠・外伸びなど）も狙えるように選択肢を完備！！！ -->
             <p style="font-size:0.8rem; font-weight:bold; color:#aaa; margin: 4px 0;">➔ ④ 🌪️ 現在のトラックバイアス（馬場傾向）を選択</p>
             <select id="sim-bias" class="select-input">
-                <option value="内枠有利">内枠有利（内線経済コース激走）</option>
-                <option value="外伸び有利">外伸び有利（大外一気・差し有利）</option>
+                <option value="" selected>-- 馬場傾向を選択してください --</option>
+                <option value="内枠有利">内枠有利（内線経済コース激走・内穴狙い）</option>
+                <option value="外伸び有利">外伸び有利（大外一気・差し有利・外穴狙い）</option>
+                <option value="フラット">フラット（標準傾向・実力通り）</option>
             </select>
+            
+            <!-- 🌟【改善4】馬券のジャンルも、単勝・複勝から全払戻回収まで、オーナーの狙いたい馬券をバチッと選べます！！！ -->
             <p style="font-size:0.8rem; font-weight:bold; color:#aaa; margin: 4px 0;">➔ ⑤ 購入する馬券のジャンル</p>
             <select id="sim-ticket" class="select-input">
-                <option value="1">単勝馬券 (1着当て)</option>
-                <option value="2">複勝馬券 (3着以内当て)</option>
-                <option value="3">枠連・馬連・馬単・三連複・三連単（全払戻全対応回収モード）</option>
+                <option value="" selected>-- 馬券の種類を選択してください --</option>
+                <option value="1">単勝馬券 (1着当て・単勝狙い)</option>
+                <option value="2">複勝馬券 (3着以内当て・複勝狙い)</option>
+                <option value="3">枠連・馬連・馬単・三連複・三連単（万馬券・全払戻回収モード）</option>
             </select>
-            <p style="font-size:0.8rem; font-weight:bold; color:#aaa; margin: 4px 0;">➔ ⑥ 1点あたりの投資金額（円）</p>
-            <input type="tel" id="sim-money" class="text-input" value="1000">
+            
+            <!-- 🌟【改善5】投資金額も、最初は空欄（未選択）から、ファンが自分で1タップ指定できるように変更！！！ -->
+            <p style="font-size:0.8rem; font-weight:bold; color:#aaa; margin: 4px 0;">➔ ⑥ 1点あたりの投資金額を選択してください</p>
+            <select id="sim-money" class="select-input">
+                <option value="" selected>-- 投資金額を選択してください --</option>
+                <option value="100">100円</option>
+                <option value="500">500円</option>
+                <option value="1000">1,000円</option>
+                <option value="3000">3,000円</option>
+                <option value="5000">5,000円</option>
+                <option value="10000">10,000円</option>
+                <option value="30000">30,000円</option>
+                <option value="50000">5,0000円</option>
+            </select>
+            
             <button id="predict-btn" class="btn-predict" onclick="loadAndUnzipJraDatabase()">🧠 指定レースのデータ検索を実行</button>
         </div>
         <div class="result-report-card" id="report-card" style="display: none;">
@@ -74,24 +125,28 @@
         </div>
     </div>
     <script>
-        // 🌪️【完全大覚醒】オーナーの入力欄の文字と、1万8,781頭すべてのZIP内テキストを1文字のズレもなく完全ガチ結合させる検索エンジン！
         function loadAndUnzipJraDatabase() {
-            // ➊ オーナーが画面に入力した文字をリアルタイムに100%正確に吸い上げる！！！
             var rawDate = document.getElementById("sim-date").value;
             if(!rawDate){ alert("❌ 日付を選択してください"); return; }
-            var cG = rawDate.replace(/-/g, "").replace(/\//g, "").trim(); // ハイフンを自動粉砕！
+            var cG = rawDate.replace(/-/g, "").replace(/\//g, "").trim();
             
-            var cV = document.getElementById("sim-venue").value.trim();
+            var cV = document.getElementById("sim-venue").value;
+            if(!cV){ alert("❌ 競馬場を選択してください"); return; }
             
-            var rawRace = document.getElementById("sim-race").value.trim();
-            var cR = rawRace.toUpperCase().replace("R","") + "R"; // 小文字のrも大文字のRに全自動統一！
+            var cR = document.getElementById("sim-race").value;
+            if(!cR){ alert("❌ レース番号を選択してください"); return; }
             
             var cB = document.getElementById("sim-bias").value;
+            if(!cB){ alert("❌ トラックバイアスを選択してください"); return; }
+            
             var cT = document.getElementById("sim-ticket").value;
-            var cM = parseInt(document.getElementById("sim-money").value) || 1000;
+            if(!cT){ alert("❌ 馬券の種類を選択してください"); return; }
+            
+            var cM = parseInt(document.getElementById("sim-money").value) || 0;
+            if(cM <= 0){ alert("❌ 投資金額を選択してください"); return; }
             
             var btn = document.getElementById("predict-btn");
-            btn.innerText = "⚡ 指定された「" + cG + " " + cV + " " + cR + "」を1万8,781頭から爆速抽出中...";
+            btn.innerText = "⚡ 「" + cV + " " + cR + "」のデータ1万8,781頭を爆速自動解凍スキャン中...";
 
             var target_zip_url = window.location.origin + "/racedata.zip";
 
@@ -107,42 +162,3 @@
                     
                     var textBuffer = await file.async("arraybuffer");
                     var decoder = new TextDecoder("shift_jis");
-                    var text = decoder.decode(textBuffer);
-                    var allLines = text.split(/\r?\n/);
-                    
-                    var matched_horses = [];
-                    
-                    // ➋ 1万8,781頭の生テキストから、オーナーの指定条件と「100%完全一致」する行だけを抜き出す！
-                    for(var i=0; i<allLines.length; i++) {
-                        var line = allLines[i].trim();
-                        if(!line) continue;
-                        
-                        var d = [];
-                        if(line.indexOf(',') !== -1) { d = line.split(',').map(x => x.trim()); }
-                        else if(line.indexOf('\t') !== -1) { d = line.split('\t').map(x => x.trim()); }
-                        else { d = line.split(/\s+/).map(x => x.trim()); }
-                        
-                        if(d[0] === "日付" || d[0] === "date" || d[0] === "開催日") continue;
-                        if(d.length < 8) continue;
-                        
-                        // 生データの日付、競馬場、レース番号の形式を綺麗に純化
-                        var file_date = d[0].replace(/-/g,"").replace(/\//g,"").trim();
-                        if(file_date.length === 6) { file_date = "20" + file_date; }
-                        
-                        var file_venue = d[1].trim();
-                        var file_race = d[2].toUpperCase().replace("R","").trim() + "R";
-                        
-                        // 🌟【ガチ結合】オーナーの入力（cG, cV, cR）と、ファイルの中身が完全に一致した時だけ作動！！！
-                        if(file_date === cG && file_venue === cV && file_race === cR) {
-                            try {
-                                var waku_clean = parseInt(d[3]) || 0;
-                                var num_clean = parseInt(d[4]) || 0;
-                                var name_clean = d[5].trim();
-                                var jockey_clean = d[6].trim();
-                                var odds_clean = parseFloat(d[7].toString().replace("倍","").trim()) || 0.0;
-                                
-                                // 複勝・払戻金のデータが後ろの列にあれば自動取得、無ければオッズから自動計算
-                                var fuku_clean = (d.length > 8 && d[8]) ? parseFloat(d[8].toString().replace("倍","").trim()) : 0.0;
-                                var order_clean = 99;
-                                if(d.length > 9 && d[9]) {
-                                    var order_raw = d[9].replace("着","").replace("確定","").trim();
