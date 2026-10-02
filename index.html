@@ -4,28 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
     <title>JRA中央競馬 AI出馬表プレミアム製品版</title>
-    <!-- 🚀【正規JSZip公式CDN】本物の解凍プログラムを正確に読み込み、維持します！ -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <style>
-        body { font-family: sans-serif; background-color: #0a0a0a; color: #dddddd; margin: 0; padding: 10px; text-align: center; }
-        .container { max-width: 550px; margin: 0 auto; background: #151515; padding: 20px; border-radius: 20px; border: 1px solid #d4af37; box-shadow: 0 8px 30px rgba(212,175,55,0.15); }
-        h1 { font-size: 1.4rem; color: #d4af37; margin: 0 0 15px 0; font-weight: bold; }
-        .subtitle { text-align: center; font-size: 0.8rem; color: #aa8822; margin-bottom: 20px; font-weight: bold; }
-        .selector-box { text-align: left; background: #1c1c1c; padding: 15px; border-radius: 12px; border: 1px solid #333; }
-        .select-input, .text-input { width: 100%; padding: 12px; font-size: 1rem; border-radius: 8px; border: 1px solid #444; background: #111; color: #fff; box-sizing: border-box; margin-bottom: 15px; text-align: center; font-weight: bold; }
-        .select-input { -webkit-appearance: none; }
-        .btn-predict { width: 100%; background: linear-gradient(135deg, #e53e3e 0%, #9b2c2c 100%); color: white; border: none; padding: 14px; font-size: 1.1rem; font-weight: bold; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 0 #5b1414; }
-        .btn-predict:active { transform: translateY(2px); box-shadow: none; }
-        .result-report-card { background: #2a2415; border: 1px solid #d4af37; padding: 15px; border-radius: 10px; margin-top: 20px; text-align: left; }
-        .report-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
-        .report-item { background: #111; padding: 10px; border-radius: 6px; text-align: center; border: 1px solid #333; }
-        .prediction-box { background: #1c140c; border: 2px solid #dc2626; padding: 15px; border-radius: 12px; margin-top: 20px; text-align: left; }
-        table { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin-top: 5px; color: #ddd; }
-        th, td { padding: 12px 4px; border-bottom: 1px solid #333; text-align: center; }
-        th { background-color: #222; color: #d4af37; font-weight: bold; }
-        .badge-win { background: #dc2626; color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
-        .badge-place { background: #319795; color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
-    </style>
+    <!-- 🚀 デザイン・レイアウトを外部ファイルから読み込み -->
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
@@ -70,18 +50,22 @@
             
             <p style="font-size:0.8rem; font-weight:bold; color:#aaa; margin: 4px 0;">➔ ④ トラックバイアス（馬場傾向）を選択</p>
             <select id="sim-bias" class="select-input">
+                <option value="" selected>-- 馬場傾向を選択してください --</option>
+                <option value="内枠有利">内枠有利（内線経済コース激走・内穴狙い）</option>
+                <option value="外伸び有利">外伸び有利（大外一気・差し有利・外穴狙い）</option>
                 <option value="フラット">フラット（標準傾向・実力通り）</option>
             </select>
             
             <p style="font-size:0.8rem; font-weight:bold; color:#aaa; margin: 4px 0;">➔ ⑤ 購入する馬券のジャンル</p>
             <select id="sim-ticket" class="select-input">
+                <option value="" selected>-- 馬券の種類を選択してください --</option>
                 <option value="1">単勝馬券 (1着当て・単勝狙い)</option>
                 <option value="2">複勝馬券 (3着以内当て・複勝狙い)</option>
-                <option value="3">全馬券回収モード</option>
+                <option value="3">枠連・馬連・馬単・三連複・三連単（万馬券・全払戻回収モード）</option>
             </select>
             
             <p style="font-size:0.8rem; font-weight:bold; color:#aaa; margin: 4px 0;">➔ ⑥ 1点あたりの投資金額を入力してください（円）</p>
-            <input type="tel" id="sim-money" class="text-input" placeholder="金額を入力" value="1000">
+            <input type="tel" id="sim-money" class="text-input" placeholder="金額を自由に入力（例：1000）" value="">
             
             <button id="predict-btn" class="btn-predict" onclick="loadAndUnzipJraDatabase()">🧠 指定レースのデータ検索を実行</button>
         </div>
@@ -90,80 +74,24 @@
             <div class="report-grid">
                 <div class="report-item">総投資金額<div id="res-invest" style="font-weight:bold; margin-top:4px;">0円</div></div>
                 <div class="report-item">総払い戻し金額<div id="res-return" style="font-weight:bold; margin-top:4px;">0円</div></div>
-                <div class="report-item" style="grid-column: span 2; background: #000; border: 1px solid #d4af37;">実際の純収支（利益）<div id="res-pure" style="font-size: 1.4rem; color: #dc2626; font-weight:900;">+0円</div></div>
+                <div class="report-item" style="grid-column: span 2; background: #000; border: 1px solid #d4af37;">Actual Pure Profit（純利益）<div id="res-pure" style="font-size: 1.4rem; color: #dc2626; font-weight:900;">+0円</div></div>
             </div>
         </div>
         <div class="prediction-box">
             <div style="color:#d4af37; font-weight:bold; margin-bottom:10px;">📋 AI推奨判定・確定出馬表データ</div>
             <table>
                 <thead>
-                    <tr><th>枠-馬</th><th>🤖 AI推奨印</th><th>競走馬名</th><th>騎手</th><th>オッズ</th></tr>
+                    <tr><th>枠-馬</th><th>🤖 AI推奨印</th><th>競走馬名</th><th>騎手</th><th>オッズ</th><th>確定着順</th><th>収支結果</th></tr>
                 </thead>
                 <tbody id="predict-tbody">
-                    <tr><td colspan="5" style="color:#666; padding:20px 0; text-align: center;">条件を指定し、上の赤いボタンを押してください</td></tr>
+                    <tr><td colspan="7" style="color:#666; padding:20px 0; text-align: center;">条件を指定し、上の赤いボタンを押してください</td></tr>
                 </tbody>
             </table>
         </div>
     </div>
-    <script>
-        // 🌪️【デバッグ実況機能100%完全維持・文法完全復元版】
-        function loadAndUnzipJraDatabase() {
-            // 🟥 【追跡1】ボタン押下チェック
-            alert("➔ [1/7] [ボタン押下成功] 正常にプログラムの1行目が作動しました！");
 
-            var rawDate = document.getElementById("sim-date").value;
-            if(!rawDate){ alert("❌ 日付を選択してください"); return; }
-            var cG = rawDate.replace(/-/g, "").replace(/\//g, "").trim();
-            
-            var cV = document.getElementById("sim-venue").value;
-            if(!cV){ alert("❌ 競馬場を選択してください"); return; }
-            
-            var cR = document.getElementById("sim-race").value;
-            if(!cR){ alert("❌ レース番号を選択してください"); return; }
-            
-            var cM = parseInt(document.getElementById("sim-money").value) || 0;
-            if(cM <= 0){ alert("❌ 投資金額を半角数字で入力してください"); return; }
-            
-            var cB = document.getElementById("sim-bias").value;
-            var cT = document.getElementById("sim-ticket").value;
-            var btn = document.getElementById("predict-btn");
-            btn.innerText = "⚡ デバッグ検証中...";
-
-            // 🚀 【追跡2】API到達（ZIPファイルダウンロード通信）の開始
-            var target_zip_url = "racedata.zip";
-            alert("➔ [2/7] [API到達成功] これより同じサーバー内の '" + target_zip_url + "' へ通信(fetch)を開始します。");
-
-            fetch(target_zip_url, { method: "GET", cache: "no-cache" })
-                .then(response => {
-                    // 🟥 【追跡3】通信応答チェック
-                    alert("➔ [3/7] [検索開始成功] サーバーから電波が戻りました！\n■ 通信成功フラグ(ok): " + response.ok + "\n■ HTTPステータス: " + response.status);
-                    if(!response.ok) { 
-                        alert("❌ 警告: サーバー上に 'racedata.zip' が見つかりません。");
-                        throw new Error("ZIPファイル取得失敗"); 
-                    }
-                    return response.arrayBuffer();
-                })
-                .then(async (buffer) => {
-                    // 🟥 【追跡4】ZIP読み込み開始チェック
-                    alert("➔ [4/7] [ZIP読み込み開始] 成功！\nこれより、本物のJSZipライブラリで解凍処理を行います。");
-                    
-                    var zip = await JSZip.loadAsync(buffer);
-                    alert("➔ [解凍成功] ZIPフォルダの開封に成功しました！中身のファイル名を調べます。");
-                    
-                    var file = null;
-                    var zipFiles = [];
-                    zip.forEach(function (relativePath, zipEntry) {
-                        zipFiles.push(relativePath);
-                        if (relativePath.toLowerCase().indexOf(".txt") !== -1) {
-                            file = zipEntry;
-                        }
-                    });
-                    
-                    alert("📦 [ZIP内ファイル確認] 発見されたファイル名:\n" + zipFiles.join("\n"));
-                    
-                    if(!file) { 
-                        alert("❌ 警告: ZIPフォルダの中にテキストファイル(.txt)がありません！"); 
-                        btn.innerText = "🧠 指定レースのデータ検索を実行"; return; 
-                    }
-                    
-                    // 🟥 【追跡5】検索実行（テキスト抽出・デコード）チェック
+    <!-- 🌟【重要ルール】JSZip公式CDNと、外部頭脳ファイル「app.js」を最後に完全インポート -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
