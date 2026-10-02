@@ -110,7 +110,6 @@
         </div>
     </div>
     <script>
-        // 🌟【エラー完全根治】プログラムの気絶を100%回避する解凍検索エンジン
         function loadAndUnzipJraDatabase() {
             var rawDate = document.getElementById("sim-date").value;
             if(!rawDate){ alert("❌ 日付を選択してください"); return; }
@@ -129,9 +128,8 @@
             if(cM <= 0){ alert("❌ 投資金額を半角数字で入力してください"); return; }
             
             var btn = document.getElementById("predict-btn");
-            btn.innerText = "⚡ 1万8,781頭のZIPデータを全自動解凍中...";
+            btn.innerText = "⚡ JRAのZIPフォルダ1万8,781頭をブラウザ上で全自動解凍中...";
 
-            // 🚀 相対パス「racedata.zip」で同じフォルダから直接安全に引き抜く
             var target_zip_url = "racedata.zip";
 
             fetch(target_zip_url, { method: "GET", cache: "no-cache" })
@@ -162,4 +160,6 @@
                         if(!line) continue;
                         
                         var d = [];
-                        if(line.indexOf(',') !== -1) { d = line.split(',').map(x => x.strip ? x.strip() : x.trim()); }
+                        if(line.indexOf(',') !== -1) { d = line.split(',').map(x => x.trim()); }
+                        else if(line.indexOf('\t') !== -1) { d = line.split('\t').map(x => x.trim()); }
+                        else { d = line.split(/\s+/).map(x => x.trim()); }
