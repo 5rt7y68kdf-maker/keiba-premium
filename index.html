@@ -4,6 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
     <title>JRA中央競馬 AI出馬表プレミアム製品版</title>
+    <!-- 🚀【プロの対策】ZIPファイルをブラウザ上で超高速で全自動解凍するための、世界一安全な公式部品（JSZip）をネットからガチ結合！ -->
+    <script src="https://cloudflare.com"></script>
     <style>
         body { font-family: sans-serif; background-color: #0a0a0a; color: #dddddd; margin: 0; padding: 10px; text-align: center; }
         .container { max-width: 550px; margin: 0 auto; background: #151515; padding: 20px; border-radius: 20px; border: 1px solid #d4af37; box-shadow: 0 8px 30px rgba(212,175,55,0.15); }
@@ -27,7 +29,7 @@
 <body>
     <div class="container">
         <h1>🔮 AI最高峰出馬表＆全馬券シミュレーター</h1>
-        <div class="subtitle">JRAプレミアム過去ログ・1万8,781頭生データ直撃検索版</div>
+        <div class="subtitle">JRAプレミアム過去ログ・1万8,781頭生データ圧縮自動解凍検索版</div>
         
         <div class="selector-box">
             <p style="font-size:0.8rem; font-weight:bold; color:#aaa; margin: 4px 0;">➔ ① 開催年月日を選択してください</p>
@@ -48,7 +50,7 @@
             </select>
             <p style="font-size:0.8rem; font-weight:bold; color:#aaa; margin: 4px 0;">➔ ⑥ 1点あたりの投資金額（円）</p>
             <input type="tel" id="sim-money" class="text-input" value="1000">
-            <button id="predict-btn" class="btn-predict" onclick="searchJraDatabaseFile()">🧠 指定レースのデータ検索を実行</button>
+            <button id="predict-btn" class="btn-predict" onclick="loadAndUnzipJraDatabase()">🧠 指定レースのデータ検索を実行</button>
         </div>
         <div class="result-report-card" id="report-card" style="display: none;">
             <div style="font-weight: bold; color: #d4af37; border-bottom: 1px solid #444; padding-bottom: 5px;">📊 馬券投資シミュレーション結果</div>
@@ -71,8 +73,8 @@
         </div>
     </div>
     <script>
-        // 🚀【究極の核心】真横に配置された「racedata.txt（1万8,781頭）」をネット上で直接引っ張り出してきて自動解析する本物のプログラムエンジン！
-        function searchJraDatabaseFile() {
+        // 🌪️【無敵の最終兵器】ネット上の圧縮されたracedata.zipを、ボタンが押された一瞬で全自動で超高速解凍して、1万8千頭すべてを完璧に読み解く全自動プログラム！
+        function loadAndUnzipJraDatabase() {
             var rawDate = document.getElementById("sim-date").value;
             if(!rawDate){ alert("❌ 日付を選択してください"); return; }
             var cG = rawDate.replace(/-/g, "").replace(/\//g, "").trim();
@@ -82,23 +84,29 @@
             var cT = document.getElementById("sim-ticket").value;
             var cM = parseInt(document.getElementById("sim-money").value) || 1000;
             var btn = document.getElementById("predict-btn");
-            btn.innerText = "📡 JRA実績生データ1万8,781頭を爆速スキャン中...";
+            btn.innerText = "⚡ 1万8,781頭のZIPフォルダを全自動解凍スキャン中...";
 
-            // 同じ倉庫にある「racedata.txt」を直接読み込む電波を走らせます！
-            fetch("racedata.txt")
+            // ネット上の「racedata.zip」をバイナリ電波のまま直接吸い込みます！
+            fetch("racedata.zip")
                 .then(response => {
                     if(!response.ok) { throw new Error(); }
                     return response.arrayBuffer();
                 })
-                .then(buffer => {
-                    // Shift-JISの文字化け対策を完全執行
+                .then(async (buffer) => {
+                    // JSZipエンジンを起動して、裏側で1秒で自動解凍（展開）を執行！
+                    var zip = await JSZip.loadAsync(buffer);
+                    var file = zip.file("racedata.txt");
+                    if(!file) { alert("❌ ZIPの中に racedata.txt が見つかりません。"); return; }
+                    
+                    // 解凍された中身の実績生テキストデータを一気に取り出します！
+                    var textBuffer = await file.async("arraybuffer");
                     var decoder = new TextDecoder("shift_jis");
-                    var text = decoder.decode(buffer);
-                    var lines = text.split(/\r?\n/);
+                    var text = decoder.decode(textBuffer);
+                    var allLines = text.split(/\r?\n/);
                     
                     var matched_horses = [];
-                    for(var i=0; i<lines.length; i++) {
-                        var line = lines[i].strip ? lines[i].strip() : lines[i].trim();
+                    for(var i=0; i<allLines.length; i++) {
+                        var line = allLines[i].trim();
                         if(!line) continue;
                         
                         var d = [];
@@ -106,26 +114,26 @@
                         else if(line.indexOf('\t') !== -1) { d = line.split('\t').map(x => x.trim()); }
                         else { d = line.split(/\s+/).map(x => x.trim()); }
                         
-                        if(d[0] === "日付" || d[0] === "date") continue;
+                        if(d === "日付" || d === "date") continue;
                         if(d.length < 8) continue;
                         
-                        var date_clean = d[0].replace(/-/g,"").replace(/\//g,"").trim();
+                        var date_clean = d.replace(/-/g,"").replace(/\//g,"").trim();
                         if(date_clean.length === 6) { date_clean = "20" + date_clean; }
                         
-                        var venue_clean = d[1];
-                        var race_clean = d[2].replace("R","").replace("r","").trim() + "R";
+                        var venue_clean = d;
+                        var race_clean = d.replace("R","").replace("r","").trim() + "R";
                         
                         if(date_clean === cG && venue_clean === cV && race_clean === cR) {
                             try {
-                                var waku_clean = parseInt(d[3]) || 0;
-                                var num_clean = parseInt(d[4]) || 0;
-                                var name_clean = d[5];
-                                var jockey_clean = d[6];
-                                var odds_clean = float_parse(d[7]);
-                                var fuku_clean = d.length > 8 ? float_parse(d[8]) : 0.0;
+                                var waku_clean = parseInt(d) || 0;
+                                var num_clean = parseInt(d) || 0;
+                                var name_clean = d;
+                                var jockey_clean = d;
+                                var odds_clean = parseFloat(d.replace("倍","").trim()) || 0.0;
+                                var fuku_clean = d.length > 8 ? (parseFloat(d.replace("倍","").trim()) || 0.0) : 0.0;
                                 var order_clean = 99;
                                 if(d.length > 9) {
-                                    var order_raw = d[9].replace("着","").replace("確定","").trim();
+                                    var order_raw = d.replace("着","").replace("確定","").trim();
                                     if(!isNaN(order_raw)) order_clean = parseInt(order_raw);
                                 }
                                 var tan_pay_calc = (order_clean === 1) ? Math.floor(odds_clean * 100) : 0;
@@ -134,16 +142,3 @@
                                 matched_horses.push({
                                     waku: waku_clean, num: num_clean, name: name_clean, jockey: jockey_clean,
                                     odds: odds_clean, order: order_clean, tan_pay: tan_pay_calc, fuku_pay: fuku_pay_calc
-                                });
-                            } catch(e) { continue; }
-                        }
-                    }
-
-                    if (matched_horses.length === 0) {
-                        alert("❌ 指定データの過去ログがありません。有効な開催データを入力してください。\n【例1：NHKマイルC】2026-05-03 / 東京 / 11R\n【例2】2026-05-02 / 東京 / 1R");
-                        btn.innerText = "🧠 指定レースのデータ検索を実行"; return;
-                    }
-
-                    // 馬番順に綺麗に並び替える
-                    matched_horses.sort((a, b) => a.num - b.num);
-
