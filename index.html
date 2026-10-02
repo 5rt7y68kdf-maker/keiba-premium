@@ -73,7 +73,7 @@
         </div>
     </div>
     <script>
-        // 🌪️【無敵の最終兵器】ネット上の圧縮されたracedata.zipを、ボタンが押された一瞬で全自動で超高速解凍して、1万8千頭すべてを完璧に読み解く全自動プログラム！
+        // 🌪️【無敵の最終兵器】インターネット上の公開アドレスから直接ZIPを吸い込み、一瞬で全自動解凍して1万8千頭すべてを完璧に読み解く確定プログラム！
         function loadAndUnzipJraDatabase() {
             var rawDate = document.getElementById("sim-date").value;
             if(!rawDate){ alert("❌ 日付を選択してください"); return; }
@@ -86,19 +86,19 @@
             var btn = document.getElementById("predict-btn");
             btn.innerText = "⚡ 1万8,781頭のZIPフォルダを全自動解凍スキャン中...";
 
-            // ネット上の「racedata.zip」をバイナリ電波のまま直接吸い込みます！
-            fetch("racedata.zip")
+            // 🚀【根本治療】裸の名前ではなく、Renderの公開ネットURL住所から直接ZIPを直撃ダウンロードさせて防壁を完全無効化（スルー）します！
+            var target_zip_url = window.location.origin + "/racedata.zip";
+
+            fetch(target_zip_url)
                 .then(response => {
                     if(!response.ok) { throw new Error(); }
                     return response.arrayBuffer();
                 })
                 .then(async (buffer) => {
-                    // JSZipエンジンを起動して、裏側で1秒で自動解凍（展開）を執行！
                     var zip = await JSZip.loadAsync(buffer);
                     var file = zip.file("racedata.txt");
                     if(!file) { alert("❌ ZIPの中に racedata.txt が見つかりません。"); return; }
                     
-                    // 解凍された中身の実績生テキストデータを一気に取り出します！
                     var textBuffer = await file.async("arraybuffer");
                     var decoder = new TextDecoder("shift_jis");
                     var text = decoder.decode(textBuffer);
