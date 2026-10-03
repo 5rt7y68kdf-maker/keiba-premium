@@ -68,9 +68,32 @@ function getDgBlockNumber(venueName) {
     return 1;
 }
 
-// CSVパース関数 (DGファイル ＆ 2025-2026.csv 両対応)
+// JRA公式枠割ルールに基づく「枠番」自動計算関数
+function getJraWaku(num, total) {
+    if (!num || num <= 0) return 1;
+    if (!total || total <= 8) return Math.min(8, num);
+    if (total <= 16) {
+        var singleGates = 16 - total;
+        var curr = 1;
+        for (var w = 1; w <= 8; w++) {
+            var gateSize = (w <= singleGates) ? 1 : 2;
+            if (num >= curr && num < curr + gateSize) return w;
+            curr += gateSize;
+        }
+        return Math.min(8, Math.ceil(num / 2));
+    } else if (total === 17) {
+        if (num <= 14) return Math.ceil(num / 2);
+        return 8;
+    } else {
+        if (num <= 12) return Math.ceil(num / 2);
+        if (num <= 15) return 7;
+        return 8;
+    }
+}
+
+// CSVパース関数 (DGファイル ＆ 着順並びの2025-2026.csv 両対応)
 function parseCsvData(csvText, fileName, targetDate, targetVenue, targetRace) {
-    var lines = csvText.split("\n");
+    var lines = csvText.split(/\r?\n/);
     var horses = [];
 
     var isDgFile = (fileName.toUpperCase().indexOf("DG") !== -1 || fileName.indexOf("1003") !== -1 || fileName.indexOf("1004") !== -1);
@@ -107,6 +130,7 @@ function parseCsvData(csvText, fileName, targetDate, targetVenue, targetRace) {
                         var trainer = parts[17] || "";
 
                         horses.push({
+                            rank: 0,
                             waku: waku,
                             num: num,
                             name: name,
@@ -121,7 +145,7 @@ function parseCsvData(csvText, fileName, targetDate, targetVenue, targetRace) {
             }
         }
     } else {
-        // 2025-2026.csv 形式
+        // 2025-2026.csv 形式 (着順順データ ➔ 馬番順出馬表への高精度抽出変換)
         for (var i = 0; i < lines.length; i++) {
             var line = lines[i].trim();
             if (!line || line.indexOf("日付") !== -1 || line.indexOf("date") !== -1) continue;
@@ -131,75 +155,74 @@ function parseCsvData(csvText, fileName, targetDate, targetVenue, targetRace) {
 
             var lineDate = tokens[0].replace(/[-/]/g, "").trim();
             if (lineDate.length === 6) lineDate = "20" + lineDate;
-
             if (lineDate !== targetDate) continue;
 
-            var lineVenue = normalizeVenue(tokens[1]);
+            var lineVenue = normalizeVenue(tokens[1]) || normalizeVenue(tokens[3]);
             if (lineVenue !== targetVenue) continue;
 
             var lineRace = parseRaceNum(tokens[2]);
             if (lineRace !== targetRace) continue;
 
+            // 馬名（カタカナ）の位置を探索
             var nameIdx = -1;
             var horseName = "";
             for (var k = 3; k < tokens.length; k++) {
                 if (/^[\u30A0-\u30FFー・]{2,9}$/.test(tokens[k])) {
-                    nameIdx = k;
-                    horseName = tokens[k];
-                    break;
+                    if (!/^(ダート|障害|リステッド|レース)$/.test(tokens[k])) {
+                        nameIdx = k;
+                        horseName = tokens[k];
+                        break;
+                    }
                 }
             }
 
             if (!horseName) continue;
 
-            var waku = (nameIdx >= 5 && /^\d+$/.test(tokens[nameIdx - 2])) ? parseInt(tokens[nameIdx - 2], 10) : 1;
+            // 馬名の直前が「馬番」、さらにその前が「着順」
             var num = (nameIdx >= 4 && /^\d+$/.test(tokens[nameIdx - 1])) ? parseInt(tokens[nameIdx - 1], 10) : 1;
+            var rank = (nameIdx >= 5 && /^\d+$/.test(tokens[nameIdx - 2])) ? parseInt(tokens[nameIdx - 2], 10) : 1;
 
-            var sexAge = "牡3";
-            var jockey = "騎手";
-            var oddsVal = 0.0;
-            var trainer = "";
+            var sexAge = (nameIdx + 1 < tokens.length) ? tokens[nameIdx + 1] : "牡3";
+            var jockey = (nameIdx + 2 < tokens.length) ? tokens[nameIdx + 2] : "騎手";
+            var kinryo = (nameIdx + 3 < tokens.length) ? tokens[nameIdx + 3] : "55";
+            var oddsVal = (nameIdx + 4 < tokens.length) ? parseFloat(tokens[nameIdx + 4].replace("倍", "")) : 0.0;
+            if (isNaN(oddsVal)) oddsVal = 0.0;
 
-            for (var m = nameIdx + 1; m < tokens.length; m++) {
-                var tok = tokens[m];
-                if (/^(牡|牝|セ)\d+$/.test(tok)) {
-                    sexAge = tok;
-                } else if (/^\d+\.\d+$/.test(tok)) {
-                    oddsVal = parseFloat(tok);
-                } else if (tok.indexOf("(") !== -1 && tok.indexOf(")") !== -1) {
-                    trainer = tok;
-                } else if (!jockey || jockey === "騎手") {
-                    if (!/^\d+$/.test(tok) && tok.length <= 8 && tok.indexOf("kg") === -1) {
-                        jockey = tok;
-                    }
-                }
-            }
+            var trainerParts = tokens.slice(nameIdx + 5);
+            var trainer = trainerParts.join(" ");
 
             horses.push({
-                waku: waku,
+                rank: rank,
+                waku: 1, // 後ほど総頭数から動的計算
                 num: num,
                 name: horseName,
                 sex_age: sexAge,
                 jockey: jockey,
-                kinryo: "55",
+                kinryo: kinryo,
                 odds: oddsVal,
                 trainer: trainer
             });
         }
+
+        // 過去データの全頭数から正確な「枠番」を自動割り当て
+        var totalHorses = horses.length;
+        for (var h = 0; h < horses.length; h++) {
+            horses[h].waku = getJraWaku(horses[h].num, totalHorses);
+        }
     }
 
+    // 着順並びのデータを馬番昇順（1番, 2番, 3番...）の【出馬表】へソート変換
     horses.sort(function(a, b) { return a.num - b.num; });
     return horses;
 }
 
-// 出馬表テーブル描画機能 (1番人気に必ず◎本命が付く相対順位判定版)
+// 出馬表テーブル描画機能 (全レースでオッズ1位に必ず◎本命を付与)
 function renderRaceTable(tbodyEl, horses) {
     if (!tbodyEl) {
         tbodyEl = document.getElementById("predict-tbody") || document.getElementById("tbody");
     }
     if (!tbodyEl) return;
 
-    // オッズが有効な馬をオッズ昇順（人気の高い順）にソートして順位マップを作成
     var sorted = horses.slice().filter(function(h) { return h.odds > 0; });
     sorted.sort(function(a, b) { return a.odds - b.odds; });
 
@@ -449,7 +472,7 @@ function calculateAllocation() {
     });
 
     if (combinations.length === 0) {
-        resEl.innerHTML = "<span style='color:#f87171;'>選択した馬券種に必要な馬の頭数をチェックしてください (馬連/ワイドは2頭以上, 3連複/3連単マルチは3頭以上)</span>";
+        resEl.innerHTML = "<span style='color:#f87171;'>選択した馬券種に必要な馬の頭数をチェックしてください (馬連/ワイドは2頭以上, 3連複/3连単マルチは3頭以上)</span>";
         return;
     }
 
