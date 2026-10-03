@@ -30,12 +30,23 @@ var VENUE_MAPPING = {
 
 function normalizeVenue(str) {
     if (!str) return "東京";
-    var s = str.toString();
+    var s = str.toString().trim();
+    // 1. 完全名マッチ
     for (var v in VENUE_MAPPING) {
-        if (s.indexOf(v) !== -1 || s.indexOf(VENUE_MAPPING[v].code) !== -1) {
-            return v;
-        }
+        if (s.indexOf(v) !== -1) return v;
     }
+    // 2. 略称マッチ (4中9 -> 中山, 4東1 -> 東京, 3京5 -> 京都, 1阪2 -> 阪神)
+    if (s.indexOf("中京") !== -1) return "中京";
+    if (s.indexOf("中") !== -1) return "中山";
+    if (s.indexOf("東") !== -1) return "東京";
+    if (s.indexOf("京") !== -1) return "京都";
+    if (s.indexOf("阪") !== -1) return "阪神";
+    if (s.indexOf("新") !== -1) return "新潟";
+    if (s.indexOf("福") !== -1) return "福島";
+    if (s.indexOf("札") !== -1) return "札幌";
+    if (s.indexOf("函") !== -1) return "函館";
+    if (s.indexOf("小") !== -1) return "小倉";
+
     return "東京";
 }
 
@@ -52,7 +63,7 @@ function parseRaceNum(str) {
     return m ? parseInt(m[0], 10) : 1;
 }
 
-// CSVパース関数
+// CSVパース関数 (DGファイル ＆ 2025-2026.csv 両対応)
 function parseCsvData(csvText, fileName, targetDate, targetVenue, targetRace) {
     var lines = csvText.split(/\r?\n/);
     var horses = [];
@@ -107,7 +118,7 @@ function parseCsvData(csvText, fileName, targetDate, targetVenue, targetRace) {
             }
         }
     } else {
-        // 2025-2026.csv 形式
+        // 2025-2026.csv 形式 (回次表記・柔軟パース対応)
         for (var i = 0; i < lines.length; i++) {
             var line = lines[i].trim();
             if (!line || line.indexOf("日付") !== -1 || line.indexOf("date") !== -1) continue;
@@ -115,29 +126,61 @@ function parseCsvData(csvText, fileName, targetDate, targetVenue, targetRace) {
             var tokens = line.split(/[\s,\t|]+/).filter(Boolean);
             if (tokens.length < 6) continue;
 
+            // 1. 日付判定
             var lineDate = tokens[0].replace(/[-/]/g, "").trim();
             if (lineDate.length === 6) lineDate = "20" + lineDate;
 
             if (lineDate !== targetDate) continue;
 
+            // 2. 競馬場判定 (例: "4中9", "4東1", "3京5", "1阪2", "中山")
             var lineVenue = normalizeVenue(tokens[1]);
             if (lineVenue !== targetVenue) continue;
 
+            // 3. レース番号判定
             var lineRace = parseRaceNum(tokens[2]);
             if (lineRace !== targetRace) continue;
 
-            var waku = parseInt(tokens[3], 10) || 1;
-            var num = parseInt(tokens[4], 10) || 1;
-            var name = tokens[5] || "競走馬";
-            var jockey = tokens[6] || "騎手";
-            var oddsVal = parseFloat(tokens[7]) || 0.0;
-            var trainer = tokens[8] || "";
+            // 4. 馬名・各列の動的抽出
+            var nameIdx = -1;
+            var horseName = "";
+            for (var k = 3; k < tokens.length; k++) {
+                if (/^[\u30A0-\u30FFー・]{2,9}$/.test(tokens[k])) {
+                    nameIdx = k;
+                    horseName = tokens[k];
+                    break;
+                }
+            }
+
+            if (!horseName) continue;
+
+            var waku = (nameIdx >= 5 && /^\d+$/.test(tokens[nameIdx - 2])) ? parseInt(tokens[nameIdx - 2], 10) : 1;
+            var num = (nameIdx >= 4 && /^\d+$/.test(tokens[nameIdx - 1])) ? parseInt(tokens[nameIdx - 1], 10) : 1;
+
+            var sexAge = "牡3";
+            var jockey = "騎手";
+            var oddsVal = 0.0;
+            var trainer = "";
+
+            for (var m = nameIdx + 1; m < tokens.length; m++) {
+                var tok = tokens[m];
+                if (/^(牡|牝|セ)\d+$/.test(tok)) {
+                    sexAge = tok;
+                } else if (/^\d+\.\d+$/.test(tok) || (tok.replace(".", "").length > 0 && !isNaN(parseFloat(tok)) && tok.indexOf(".") !== -1)) {
+                    oddsVal = parseFloat(tok);
+                } else if (tok.indexOf("(") !== -1 && tok.indexOf(")") !== -1) {
+                    trainer = tok;
+                } else if (!jockey || jockey === "騎手") {
+                    if (!/^\d+$/.test(tok) && tok.length <= 8 && tok.indexOf("kg") === -1) {
+                        jockey = tok;
+                    }
+                }
+            }
 
             horses.push({
                 waku: waku,
                 num: num,
-                name: name,
-                sex_age: "牡3",
+                name: horseName,
+                sex_age: sexAge,
                 jockey: jockey,
                 kinryo: "55",
                 odds: oddsVal,
@@ -323,7 +366,7 @@ async function loadAndUnzipJraDatabase() {
             response = await fetch(altName, { method: "GET", cache: "no-cache" });
         }
 
-        // 過去日付フォールバック
+        // 過去日付フォールバック通信
         if (!response.ok && targetFile !== "2025-2026.csv") {
             response = await fetch("2025-2026.csv", { method: "GET", cache: "no-cache" });
             targetFile = "2025-2026.csv";
