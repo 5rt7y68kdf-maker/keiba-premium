@@ -1,66 +1,41 @@
-/* 🌪️【KUINA AI RACING ANALYTICS - 高コントラスト・ラグジュアリーデザイン CSS】 */
-
+/* 🌪️ KUINA RACING CSS */
 body {
-    font-family: 'Segoe UI', 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
+    font-family: 'Segoe UI', 'Hiragino Kaku Gothic ProN', sans-serif;
     background-color: #0a0a0a;
     color: #e2e8f0;
     margin: 0;
     padding: 15px 8px;
     text-align: center;
-    -webkit-font-smoothing: antialiased;
 }
-
-.kuina-app-wrapper {
-    max-width: 720px;
+.container {
+    max-width: 680px;
     margin: 0 auto;
     background: #141414;
-    padding: 22px 16px;
+    padding: 20px 14px;
     border-radius: 20px;
     border: 1px solid #d4af37;
     box-shadow: 0 10px 35px rgba(212, 175, 55, 0.2);
-    box-sizing: border-box;
-    text-align: left;
 }
-
-.kuina-header {
-    text-align: center;
-    margin-bottom: 20px;
-}
-
 .kuina-header h1 {
     font-size: 1.6rem;
     color: #d4af37;
-    margin: 0 0 6px 0;
+    margin: 0 0 4px 0;
     font-weight: 800;
-    letter-spacing: 1px;
-    text-shadow: 0 2px 10px rgba(212, 175, 55, 0.3);
 }
-
-.kuina-header .subtitle {
+.subtitle {
     font-size: 0.82rem;
     color: #b89628;
+    margin-bottom: 18px;
     font-weight: 600;
 }
-
 .selector-box {
+    text-align: left;
     background: #1a1a1a;
-    padding: 18px;
+    padding: 16px;
     border-radius: 14px;
     border: 1px solid #2d2d2d;
-    box-shadow: inset 0 2px 6px rgba(0,0,0,0.4);
-    margin-bottom: 20px;
+    margin-bottom: 16px;
 }
-
-.form-row {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 12px;
-}
-
-.form-group {
-    flex: 1;
-}
-
 .form-label {
     display: block;
     font-size: 0.8rem;
@@ -68,294 +43,225 @@ body {
     font-weight: bold;
     margin-bottom: 6px;
 }
-
-.select-input, .text-input {
+.select-input, .select-input-sm {
     width: 100%;
     padding: 10px;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     border-radius: 8px;
     border: 1px solid #3d3d3d;
     background: #0f0f0f;
-    color: #ffffff;
+    color: #fff;
     box-sizing: border-box;
-    font-weight: bold;
-    outline: none;
-}
-
-.select-input-sm {
-    padding: 6px 10px;
-    font-size: 0.82rem;
-    border-radius: 6px;
-    border: 1px solid #3d3d3d;
-    background: #0f0f0f;
-    color: #ffffff;
+    text-align: center;
     font-weight: bold;
 }
-
 .race-nav-grid {
     display: grid;
     grid-template-columns: repeat(6, 1fr);
     gap: 6px;
     margin-bottom: 14px;
 }
-
 .race-btn {
     background: #222;
     border: 1px solid #3a3a3a;
     color: #ccc;
     padding: 8px 0;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     font-weight: bold;
     border-radius: 8px;
     cursor: pointer;
-    transition: all 0.2s ease;
 }
-
 .race-btn:hover, .race-btn.active {
     background: linear-gradient(135deg, #d4af37 0%, #aa8822 100%);
-    color: #000000;
+    color: #000;
     border-color: #ffd700;
     font-weight: 800;
-    box-shadow: 0 3px 10px rgba(212, 175, 55, 0.4);
 }
-
 .btn-predict {
     width: 100%;
     background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
-    color: #ffffff;
+    color: #fff;
     border: 1px solid #ef4444;
     padding: 14px;
-    font-size: 1.1rem;
+    font-size: 1.05rem;
     font-weight: 800;
     border-radius: 10px;
     cursor: pointer;
-    box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4);
-    transition: all 0.2s ease;
-    margin-top: 10px;
 }
-
-.btn-predict:hover {
-    background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
-}
-
 .bias-card, .pace-card, .ai-bets-card, .sim-card {
     background: #1a1a1a;
     border: 1px solid #2d2d2d;
     border-radius: 12px;
     padding: 14px;
-    margin-bottom: 16px;
+    margin-bottom: 14px;
+    text-align: left;
 }
-
-.bias-title, .ai-bets-title, .sim-title {
-    font-size: 0.88rem;
+.bias-title, .pace-title, .ai-bets-title, .sim-title {
     color: #d4af37;
     font-weight: bold;
+    font-size: 0.9rem;
     margin-bottom: 10px;
 }
-
 .bias-controls {
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 8px;
     margin-bottom: 8px;
 }
-
-.bias-output {
-    background: #0f0f0f;
+.bias-output-box {
+    background: #111;
     border: 1px solid #333;
     padding: 10px;
     border-radius: 8px;
     color: #38bdf8;
-    font-weight: bold;
     font-size: 0.85rem;
+    font-weight: bold;
     text-align: center;
 }
-
-.pace-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
-    font-weight: bold;
-    font-size: 0.88rem;
-    color: #d4af37;
-}
-
 .pace-badge {
-    padding: 4px 10px;
+    background: #1e293b;
+    color: #38bdf8;
+    border: 1px solid #0284c7;
+    padding: 6px;
     border-radius: 6px;
-    font-size: 0.78rem;
+    font-size: 0.82rem;
     font-weight: bold;
+    text-align: center;
+    margin-bottom: 10px;
 }
-.pace-mid { background: #d97706; color: #fff; }
-
 .position-map-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 6px;
 }
-
 .pos-group {
-    background: #0f0f0f;
-    border: 1px solid #2a2a2a;
-    border-radius: 8px;
-    padding: 8px;
+    background: #111;
+    border: 1px solid #2d2d2d;
+    border-radius: 6px;
+    padding: 6px;
     text-align: center;
 }
-
 .pos-label {
-    font-size: 0.75rem;
-    color: #94a3b8;
-    margin-bottom: 6px;
+    font-size: 0.72rem;
+    color: #d4af37;
     font-weight: bold;
+    margin-bottom: 4px;
 }
-
 .pos-horses {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-    justify-content: center;
-}
-
-.pos-horse-tag {
-    background: #262626;
-    border: 1px solid #404040;
-    color: #f1f5f9;
-    padding: 2px 6px;
-    border-radius: 4px;
     font-size: 0.7rem;
+    color: #eee;
 }
-
-.ai-bets-content {
-    background: #0f0f0f;
+.pos-horse-tag {
+    display: inline-block;
+    background: #262626;
+    padding: 2px 4px;
+    border-radius: 4px;
+    margin: 2px 0;
+}
+.ai-bets-content, .sim-result-box {
+    background: #111;
+    border: 1px solid #3d3d3d;
     padding: 10px;
     border-radius: 8px;
-    border: 1px solid #2a2a2a;
     font-size: 0.82rem;
     color: #e2e8f0;
 }
-
 .bet-item {
     margin-bottom: 4px;
 }
-
-.race-summary-header {
-    background: #211c10;
-    border: 1px solid #d4af37;
-    padding: 10px 14px;
-    border-radius: 10px;
-    margin-bottom: 12px;
-    color: #d4af37;
-    font-weight: bold;
-    font-size: 0.9rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
 .sort-box {
     display: flex;
     justify-content: center;
     gap: 8px;
     margin-bottom: 12px;
 }
-
 .sort-btn {
     background: #1a1a1a;
     border: 1px solid #3a3a3a;
-    color: #aaaaaa;
-    padding: 6px 14px;
-    border-radius: 20px;
+    color: #aaa;
+    padding: 6px 12px;
+    border-radius: 16px;
     font-size: 0.78rem;
-    font-weight: 600;
     cursor: pointer;
 }
-
 .sort-btn.active {
     background: #d4af37;
-    color: #000000;
-    font-weight: 800;
+    color: #000;
+    font-weight: bold;
 }
-
 .table-wrapper {
     overflow-x: auto;
-    border-radius: 12px;
+    border-radius: 10px;
     border: 1px solid #2d2d2d;
-    background: #111111;
-    margin-bottom: 16px;
+    background: #111;
+    margin-bottom: 14px;
 }
-
 table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.85rem;
-    color: #e2e8f0;
-    table-layout: fixed;
+    font-size: 0.82rem;
 }
-
 th, td {
     padding: 10px 4px;
-    border: 1px solid #262626;
+    border-bottom: 1px solid #222;
+    border-right: 1px solid #222;
     text-align: center;
-    vertical-align: middle;
-    word-break: break-all;
 }
-
 th {
-    background-color: #1a1a1a;
+    background: #1a1a1a;
     color: #d4af37;
-    font-weight: 800;
-    font-size: 0.8rem;
+    font-weight: bold;
 }
-
-.horse-row:hover {
-    background-color: #221e14;
-    cursor: pointer;
-}
-
 .waku-badge {
-    display: inline-block;
     padding: 2px 6px;
     border-radius: 4px;
     font-size: 0.75rem;
-    font-weight: 800;
+    font-weight: bold;
 }
-
-.waku-1 { background: #f8fafc; color: #0f172a; }
-.waku-2 { background: #1e293b; color: #f8fafc; }
-.waku-3 { background: #dc2626; color: #ffffff; }
-.waku-4 { background: #2563eb; color: #ffffff; }
-.waku-5 { background: #eab308; color: #0f172a; }
-.waku-6 { background: #16a34a; color: #ffffff; }
-.waku-7 { background: #ea580c; color: #ffffff; }
-.waku-8 { background: #ec4899; color: #ffffff; }
+.waku-1 { background: #f8fafc; color: #000; }
+.waku-2 { background: #1e293b; color: #fff; }
+.waku-3 { background: #dc2626; color: #fff; }
+.waku-4 { background: #2563eb; color: #fff; }
+.waku-5 { background: #eab308; color: #000; }
+.waku-6 { background: #16a34a; color: #fff; }
+.waku-7 { background: #ea580c; color: #fff; }
+.waku-8 { background: #ec4899; color: #fff; }
 
 .ai-badge {
-    display: inline-block;
     padding: 2px 6px;
     border-radius: 4px;
     font-size: 0.75rem;
-    font-weight: 800;
+    font-weight: bold;
 }
+.ai-honmei { background: #dc2626; color: #fff; }
+.ai-taikou { background: #2563eb; color: #fff; }
+.ai-tanana { background: #d97706; color: #fff; }
+.ai-renka  { background: #059669; color: #fff; }
+.ai-ana    { background: #7c3aed; color: #fff; }
+.ai-none   { color: #666; }
 
-.ai-honmei { background: #dc2626; color: #ffffff; }
-.ai-taikou { background: #2563eb; color: #ffffff; }
-.ai-tanana { background: #d97706; color: #ffffff; }
-.ai-ana    { background: #7c3aed; color: #ffffff; }
-.ai-renka  { background: #059669; color: #ffffff; }
-.ai-none   { color: #64748b; }
-
-.horse-name { font-size: 0.9rem; font-weight: 800; color: #ffffff; }
-.sub-info { font-size: 0.7rem; color: #94a3b8; }
-.jockey-name { font-weight: 600; color: #f1f5f9; }
+.horse-name { font-weight: bold; color: #fff; display: block; }
+.sub-info { font-size: 0.68rem; color: #94a3b8; }
+.jockey-name { font-weight: bold; color: #f1f5f9; }
 .trainer-name { font-size: 0.78rem; color: #cbd5e1; }
-.odds-val { font-weight: 800; color: #f59e0b; }
-.pop-rank { font-size: 0.7rem; color: #94a3b8; }
+.odds-val { font-weight: bold; color: #f59e0b; }
+.pop-rank { font-size: 0.68rem; color: #94a3b8; }
 
-.detail-row { background: #181611; }
-.detail-card-inner { padding: 12px; text-align: left; }
-.detail-card-inner h4 { margin: 0 0 8px 0; color: #d4af37; font-size: 0.88rem; }
-.detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 0.78rem; margin-bottom: 8px; }
-.detail-ai-comment { background: #0f0f0f; padding: 8px; border-radius: 6px; font-size: 0.78rem; color: #e2e8f0; }
-
-.sim-input-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-.sim-result-box { background: #0f0f0f; padding: 10px; border-radius: 8px; border: 1px solid #2a2a2a; font-size: 0.82rem; }
+.detail-card-inner {
+    background: #171717;
+    border: 1px solid #d4af37;
+    border-radius: 8px;
+    padding: 10px;
+    text-align: left;
+    font-size: 0.8rem;
+}
+.detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-bottom: 6px;
+}
+.detail-ai-comment {
+    color: #38bdf8;
+    font-size: 0.78rem;
+}
