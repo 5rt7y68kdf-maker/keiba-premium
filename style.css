@@ -11,7 +11,7 @@ body {
 }
 
 .container {
-    max-width: 680px;
+    max-width: 720px;
     margin: 0 auto;
     background: #141414;
     padding: 22px 16px;
@@ -38,159 +38,133 @@ h1 {
     font-weight: 600;
 }
 
-/* Card Styling */
 .kuina-card {
     background: #1a1a1a;
-    border: 1px solid #333333;
+    border: 1px solid #3d3d3d;
     border-radius: 12px;
     padding: 14px;
     margin-bottom: 16px;
     text-align: left;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
 }
 
-.card-title {
-    font-size: 0.9rem;
+.kuina-card h3 {
+    margin: 0 0 10px 0;
+    font-size: 0.95rem;
     color: #d4af37;
-    font-weight: 800;
-    margin-bottom: 10px;
-    border-bottom: 1px solid #2d2d2d;
+    border-bottom: 1px solid #333;
     padding-bottom: 6px;
 }
 
-/* Bias Panel */
+/* トラックバイアス */
 .bias-controls {
     display: flex;
-    gap: 12px;
+    gap: 15px;
     margin-bottom: 10px;
     flex-wrap: wrap;
 }
 
-.bias-controls label {
-    font-size: 0.82rem;
-    color: #cccccc;
-    font-weight: bold;
-}
-
 .bias-controls select {
-    background: #0f0f0f;
-    color: #ffffff;
-    border: 1px solid #3d3d3d;
+    background: #000;
+    color: #fff;
+    border: 1px solid #d4af37;
     padding: 6px 10px;
     border-radius: 6px;
-    font-weight: bold;
-    outline: none;
-}
-
-.bias-output-box {
-    background: #221c10;
-    border: 1px solid #d4af37;
-    color: #fbbf24;
-    padding: 10px 12px;
-    border-radius: 8px;
     font-size: 0.85rem;
     font-weight: bold;
 }
 
-/* Pace Panel */
+.bias-output-box {
+    background: #211c10;
+    border: 1px solid #d4af37;
+    color: #f59e0b;
+    padding: 10px;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 0.88rem;
+}
+
+/* 展開予想 & 隊列マップ */
 .pace-badge {
     display: inline-block;
-    padding: 6px 12px;
-    border-radius: 20px;
+    background: #dc2626;
+    color: #fff;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-weight: bold;
     font-size: 0.82rem;
-    font-weight: 800;
     margin-bottom: 12px;
 }
 
-.pace-high { background: linear-gradient(135deg, #dc2626, #b91c1c); color: #fff; }
-.pace-mid  { background: linear-gradient(135deg, #d97706, #b45309); color: #fff; }
-.pace-slow { background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #fff; }
-
 .position-map-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-    background: #111111;
-    padding: 10px;
-    border-radius: 8px;
-    border: 1px solid #282828;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
 }
 
 .pos-group {
-    text-align: center;
+    background: #111;
+    border: 1px solid #2d2d2d;
+    padding: 8px;
+    border-radius: 8px;
 }
 
 .pos-label {
-    display: block;
-    font-size: 0.75rem;
+    font-size: 0.78rem;
     color: #d4af37;
     font-weight: bold;
     margin-bottom: 6px;
 }
 
 .pos-horses {
-    font-size: 0.72rem;
-    min-height: 24px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
 }
 
 .pos-horse-tag {
-    display: inline-block;
-    padding: 2px 4px;
-    margin: 2px;
+    font-size: 0.72rem;
+    padding: 2px 6px;
     border-radius: 4px;
     font-weight: bold;
-    font-size: 0.68rem;
 }
 
-/* AI Bets */
+/* AI推奨買い目 */
 .ai-bets-card {
-    background: #1c180e;
-    border-color: #d4af37;
-}
-
-.ai-bets-content {
-    font-size: 0.82rem;
-    line-height: 1.6;
-    color: #e2e8f0;
+    background: linear-gradient(135deg, #1f190e 0%, #121008 100%);
+    border: 1px solid #d4af37;
 }
 
 .bet-item {
-    margin-bottom: 6px;
-    padding: 6px 10px;
-    background: #12100a;
-    border-radius: 6px;
-    border-left: 3px solid #d4af37;
+    font-size: 0.88rem;
+    padding: 6px 0;
+    border-bottom: 1px solid #2a2215;
+    color: #f1f5f9;
 }
 
-/* Sort Box */
-.sort-box {
-    display: flex;
-    justify-content: center;
+.bet-item:last-child {
+    border-bottom: none;
+}
+
+/* 資金配分シミュレーター */
+.sim-card {
+    background: #151515;
+    border: 1px solid #2d2d2d;
+}
+
+.sim-result-box {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
     gap: 8px;
-    margin: 16px 0 12px 0;
-    flex-wrap: wrap;
+    background: #0a0a0a;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #333;
+    margin-top: 10px;
+    font-size: 0.82rem;
 }
 
-.sort-btn {
-    background: #1a1a1a;
-    border: 1px solid #3a3a3a;
-    color: #aaaaaa;
-    padding: 7px 14px;
-    border-radius: 20px;
-    font-size: 0.78rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.sort-btn:hover, .sort-btn.active {
-    background: #d4af37;
-    color: #000000;
-    border-color: #ffd700;
-    font-weight: 800;
-}
-
-/* Table Styling */
+/* Table Style */
 .table-wrapper {
     overflow-x: auto;
     border-radius: 12px;
@@ -202,7 +176,7 @@ h1 {
 table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.85rem;
+    font-size: 0.82rem;
     color: #e2e8f0;
     table-layout: fixed;
 }
@@ -212,7 +186,7 @@ th, td {
     border: 1px solid #262626;
     text-align: center;
     vertical-align: middle;
-    word-break: break-all;
+    word-break: break-word;
 }
 
 th {
@@ -221,18 +195,19 @@ th {
     font-weight: 800;
     font-size: 0.8rem;
     border-bottom: 2px solid #3d3d3d;
+    white-space: nowrap;
 }
 
-.horse-row {
+tr.horse-row {
     cursor: pointer;
     transition: background 0.2s ease;
 }
 
-.horse-row:hover {
-    background-color: #221e14 !important;
+tr.horse-row:hover {
+    background-color: #221e14;
 }
 
-/* Waku Badges */
+/* 枠色バッジ */
 .waku-badge {
     display: inline-block;
     padding: 3px 6px;
@@ -251,14 +226,13 @@ th {
 .waku-7 { background: #ea580c; color: #ffffff; }
 .waku-8 { background: #ec4899; color: #ffffff; }
 
-/* AI Badges */
+/* AIバッジ */
 .ai-badge {
     display: inline-block;
-    padding: 3px 6px;
-    border-radius: 6px;
-    font-size: 0.75rem;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.72rem;
     font-weight: 800;
-    white-space: nowrap;
 }
 
 .ai-honmei { background: linear-gradient(135deg, #dc2626, #b91c1c); color: #ffffff; }
@@ -266,9 +240,8 @@ th {
 .ai-tanana { background: #d97706; color: #ffffff; }
 .ai-ana    { background: #7c3aed; color: #ffffff; }
 .ai-renka  { background: #059669; color: #ffffff; }
-.ai-none   { color: #64748b; font-weight: normal; }
+.ai-none   { color: #64748b; }
 
-/* Cell Content Typography */
 .horse-name {
     font-size: 0.88rem;
     font-weight: 800;
@@ -279,88 +252,75 @@ th {
 .sub-info {
     font-size: 0.68rem;
     color: #94a3b8;
-    display: block;
 }
 
 .jockey-name {
-    font-size: 0.82rem;
     font-weight: 600;
     color: #f1f5f9;
 }
 
 .trainer-name {
-    font-size: 0.78rem;
+    font-size: 0.75rem;
     color: #cbd5e1;
-    font-weight: 500;
 }
 
 .odds-val {
-    font-size: 0.88rem;
     font-weight: 800;
     color: #f59e0b;
+    font-size: 0.88rem;
 }
 
-/* Detail Card Row */
-.detail-row {
-    background: #171510 !important;
+.pop-rank {
+    font-size: 0.65rem;
+    color: #94a3b8;
 }
 
+/* アコーディオン詳細カード */
 .detail-card-inner {
-    padding: 12px;
+    background: #0d0d0d;
     border: 1px solid #d4af37;
     border-radius: 8px;
+    padding: 10px;
     margin: 6px;
     text-align: left;
-    font-size: 0.8rem;
-    color: #e2e8f0;
+}
+
+.detail-card-inner h4 {
+    margin: 0 0 8px 0;
+    color: #d4af37;
+    font-size: 0.88rem;
 }
 
 .detail-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+    font-size: 0.78rem;
+    color: #cbd5e1;
+}
+
+/* ソートボックス */
+.sort-box {
+    display: flex;
+    justify-content: center;
     gap: 8px;
-    margin-bottom: 8px;
+    margin: 14px 0 10px 0;
 }
 
-.detail-ai-comment {
-    background: #0f0d0a;
-    padding: 8px 10px;
-    border-radius: 6px;
-    border-left: 3px solid #38bdf8;
-    color: #38bdf8;
+.sort-btn {
+    background: #1a1a1a;
+    border: 1px solid #3a3a3a;
+    color: #aaaaaa;
+    padding: 6px 12px;
+    border-radius: 16px;
+    font-size: 0.75rem;
     font-weight: 600;
+    cursor: pointer;
 }
 
-/* Sim Card */
-.sim-card {
-    background: #18150e;
-    border-color: #d4af37;
-    margin-top: 20px;
-}
-
-.sim-input-row {
-    margin-bottom: 10px;
-    font-size: 0.85rem;
-    color: #cccccc;
-}
-
-.sim-input-row input {
-    background: #0f0f0f;
-    border: 1px solid #3d3d3d;
-    color: #ffffff;
-    padding: 8px 12px;
-    border-radius: 6px;
-    font-weight: bold;
-    width: 120px;
-    text-align: right;
-}
-
-.sim-result-box {
-    background: #0f0e0a;
-    border: 1px solid #333333;
-    padding: 12px;
-    border-radius: 8px;
-    font-size: 0.85rem;
-    line-height: 1.6;
-    color: #e2e8f0;
+.sort-btn.active {
+    background: #d4af37;
+    color: #000000;
+    border-color: #ffd700;
+    font-weight: 800;
 }
