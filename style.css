@@ -1,257 +1,328 @@
-/* 🌪️【KUINA AI RACING ANALYTICS - 完全統一・ラグジュアリーデザイン CSS】 */
+/* 🌪️ KUINA AI RACING ANALYTICS - ダークゴールド＆ハイコントラスト デザイン */
 
-body {
-    font-family: 'Segoe UI', 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
-    background-color: #0a0a0a;
-    color: #e2e8f0;
-    margin: 0;
-    padding: 15px 8px;
-    text-align: center;
-    -webkit-font-smoothing: antialiased;
+:root {
+    --bg-dark: #0f172a;
+    --card-bg: #1e293b;
+    --accent-gold: #f59e0b;
+    --accent-gold-light: #fef3c7;
+    --text-light: #f8fafc;
+    --text-muted: #94a3b8;
+    --border-color: #334155;
+    --danger-red: #ef4444;
 }
 
-.container {
-    max-width: 680px;
+body {
+    background-color: var(--bg-dark);
+    color: var(--text-light);
+    font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'ヒラギノ角ゴ ProN W3', sans-serif;
+    margin: 0;
+    padding: 15px;
+}
+
+.kuina-root {
+    max-width: 900px;
     margin: 0 auto;
-    background: #141414;
-    padding: 22px 16px;
-    border-radius: 20px;
-    border: 1px solid #d4af37;
-    box-shadow: 0 10px 35px rgba(212, 175, 55, 0.2);
-    box-sizing: border-box;
 }
 
 .kuina-header {
-    margin-bottom: 20px;
-}
-
-h1 {
-    font-size: 1.5rem;
-    color: #d4af37;
-    margin: 0 0 6px 0;
-    font-weight: 800;
-    letter-spacing: 1px;
-    text-shadow: 0 2px 10px rgba(212, 175, 55, 0.3);
-}
-
-.subtitle {
     text-align: center;
-    font-size: 0.82rem;
-    color: #b89628;
+    padding: 20px 10px;
+    background: linear-gradient(135deg, #1e1b4b 0%, #311042 100%);
+    border-radius: 12px;
+    border: 1px solid #4c1d95;
     margin-bottom: 20px;
-    font-weight: 600;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.4);
 }
 
-.selector-box, .kuina-card {
-    text-align: left;
-    background: #1a1a1a;
-    padding: 16px;
-    border-radius: 14px;
-    border: 1px solid #2d2d2d;
-    box-shadow: inset 0 2px 6px rgba(0,0,0,0.4);
+.kuina-header h1 {
+    margin: 0;
+    font-size: 24px;
+    color: var(--accent-gold);
+    letter-spacing: 1.5px;
+}
+
+.kuina-header p {
+    margin: 5px 0 0 0;
+    font-size: 13px;
+    color: #cbd5e1;
+}
+
+.kuina-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 18px;
     margin-bottom: 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
 }
 
-.kuina-card h3 {
-    font-size: 0.95rem;
-    color: #d4af37;
-    margin: 0 0 12px 0;
-    font-weight: 800;
+.control-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 15px;
+    margin-bottom: 15px;
 }
 
-.form-label {
+.input-group label {
     display: block;
-    font-size: 0.8rem;
-    color: #d4af37;
-    font-weight: bold;
-    margin-bottom: 6px;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 5px;
 }
 
-.select-input, .text-input, .select-input-sm {
+.kuina-input, .kuina-select {
     width: 100%;
-    padding: 12px;
-    font-size: 0.95rem;
-    border-radius: 10px;
-    border: 1px solid #3d3d3d;
-    background: #0f0f0f;
+    padding: 10px;
+    background: #0f172a;
+    border: 1px solid #475569;
+    border-radius: 6px;
     color: #ffffff;
+    font-size: 14px;
     box-sizing: border-box;
-    margin-bottom: 14px;
-    text-align: center;
-    font-weight: bold;
-    outline: none;
-    transition: all 0.2s ease;
 }
 
-.select-input-sm {
-    padding: 8px;
-    font-size: 0.85rem;
-}
-
-.btn-predict {
+.kuina-btn-search {
     width: 100%;
-    background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
-    color: #ffffff;
-    border: 1px solid #ef4444;
     padding: 14px;
-    font-size: 1.05rem;
-    font-weight: 800;
-    border-radius: 10px;
+    background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+    color: #ffffff;
+    font-weight: bold;
+    font-size: 16px;
+    border: none;
+    border-radius: 8px;
     cursor: pointer;
-    box-shadow: 0 4px 15px rgba(220, 38, 38, 0.3);
-    transition: all 0.2s ease;
-    letter-spacing: 0.5px;
+    box-shadow: 0 4px 10px rgba(217, 119, 6, 0.3);
+    transition: all 0.2s;
 }
 
-.btn-predict:hover {
-    background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
-    box-shadow: 0 6px 20px rgba(220, 38, 38, 0.5);
+.kuina-btn-search:hover {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
+
+.bias-header, .pace-header, .ai-bets-header, .sim-header {
+    font-size: 16px;
+    font-weight: bold;
+    color: var(--accent-gold);
+    margin-bottom: 12px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 8px;
+}
+
+.bias-controls {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 10px;
+}
+
+.kuina-select-sm {
+    padding: 6px;
+    background: #0f172a;
+    border: 1px solid #475569;
+    color: #fff;
+    border-radius: 4px;
 }
 
 .bias-output-box {
-    background: #111;
-    border: 1px solid #d4af37;
-    padding: 10px;
-    border-radius: 8px;
-    color: #ffd700;
-    font-weight: bold;
-    font-size: 0.85rem;
-    text-align: center;
-}
-
-.pace-badge {
-    display: inline-block;
-    background: #dc2626;
-    color: white;
-    padding: 4px 10px;
+    background: #0f172a;
+    padding: 12px;
     border-radius: 6px;
-    font-weight: bold;
-    font-size: 0.82rem;
-    margin-bottom: 10px;
+    font-size: 13px;
+    color: #f1f5f9;
+    border-left: 4px solid var(--accent-gold);
 }
 
 .position-map-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 10px;
-}
-
-.pos-group {
-    background: #111;
-    border: 1px solid #333;
-    padding: 8px;
+    background: #0f172a;
+    padding: 12px;
     border-radius: 8px;
 }
 
+.pos-group {
+    background: #1e293b;
+    padding: 8px;
+    border-radius: 6px;
+    text-align: center;
+}
+
 .pos-label {
-    font-size: 0.78rem;
-    color: #d4af37;
+    font-size: 12px;
     font-weight: bold;
-    margin-bottom: 4px;
+    color: var(--text-muted);
+    margin-bottom: 5px;
+}
+
+.pos-horses {
+    font-size: 12px;
+    color: #f8fafc;
 }
 
 .pos-horse-tag {
     display: inline-block;
-    background: #222;
-    color: #fff;
+    background: #334155;
     padding: 2px 6px;
     border-radius: 4px;
-    font-size: 0.72rem;
     margin: 2px;
+    font-size: 11px;
 }
 
-.bet-item {
-    background: #111;
-    border: 1px solid #3a3a3a;
-    padding: 8px;
+.ai-bet-grid {
+    display: grid;
+    gap: 10px;
+}
+
+.bet-card {
+    background: #0f172a;
+    padding: 10px 14px;
     border-radius: 6px;
-    margin-bottom: 6px;
-    font-size: 0.85rem;
+    font-size: 13px;
+    border-left: 3px solid #10b981;
+}
+
+.bet-val {
+    color: var(--accent-gold);
+    font-weight: bold;
+}
+
+.table-header-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.sort-btn {
+    background: #334155;
+    color: #ccc;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    margin-left: 5px;
+}
+
+.sort-btn.active {
+    background: var(--accent-gold);
+    color: #000;
+    font-weight: bold;
 }
 
 .table-wrapper {
     overflow-x: auto;
-    border-radius: 12px;
-    border: 1px solid #2d2d2d;
-    background: #111111;
-    margin-bottom: 20px;
 }
 
-table {
+.kuina-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.85rem;
-    color: #e2e8f0;
+    font-size: 13px;
 }
 
-th, td {
-    padding: 11px 6px;
-    border-bottom: 1px solid #222222;
-    text-align: center;
-    vertical-align: middle;
+.kuina-table th {
+    background: #0f172a;
+    color: var(--text-muted);
+    padding: 10px;
+    text-align: left;
+    border-bottom: 2px solid var(--border-color);
 }
 
-th {
-    background-color: #1a1a1a;
-    color: #d4af37;
-    font-weight: 800;
-    font-size: 0.82rem;
-    border-bottom: 2px solid #3d3d3d;
-    white-space: nowrap;
+.kuina-table td {
+    padding: 12px 10px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.horse-row:hover {
+    background: #334155;
+    cursor: pointer;
 }
 
 .waku-badge {
     display: inline-block;
-    padding: 3px 8px;
-    border-radius: 5px;
-    font-size: 0.78rem;
-    font-weight: 800;
-    white-space: nowrap;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-weight: bold;
+    font-size: 12px;
+    color: #fff;
 }
 
-.waku-1 { background: #f8fafc; color: #0f172a; border: 1px solid #cbd5e1; }
-.waku-2 { background: #1e293b; color: #f8fafc; border: 1px solid #475569; }
-.waku-3 { background: #dc2626; color: #ffffff; }
-.waku-4 { background: #2563eb; color: #ffffff; }
-.waku-5 { background: #eab308; color: #0f172a; }
-.waku-6 { background: #16a34a; color: #ffffff; }
-.waku-7 { background: #ea580c; color: #ffffff; }
-.waku-8 { background: #ec4899; color: #ffffff; }
+.waku-1 { background: #e2e8f0; color: #000; }
+.waku-2 { background: #1e293b; color: #fff; border: 1px solid #475569; }
+.waku-3 { background: #ef4444; color: #fff; }
+.waku-4 { background: #3b82f6; color: #fff; }
+.waku-5 { background: #eab308; color: #000; }
+.waku-6 { background: #16a34a; color: #fff; }
+.waku-7 { background: #ea580c; color: #fff; }
+.waku-8 { background: #ec4899; color: #fff; }
 
 .ai-badge {
     display: inline-block;
-    padding: 3px 8px;
-    border-radius: 6px;
-    font-size: 0.78rem;
-    font-weight: 800;
-    white-space: nowrap;
+    padding: 3px 6px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: bold;
 }
 
-.ai-honmei { background: linear-gradient(135deg, #dc2626, #b91c1c); color: #ffffff; }
-.ai-taikou { background: #2563eb; color: #ffffff; }
-.ai-tanana { background: #d97706; color: #ffffff; }
-.ai-ana    { background: #7c3aed; color: #ffffff; }
-.ai-renka  { background: #059669; color: #ffffff; }
-.ai-none   { color: #64748b; font-weight: normal; }
+.ai-honmei { background: #dc2626; color: #fff; }
+.ai-taikou { background: #ea580c; color: #fff; }
+.ai-tanana { background: #ca8a04; color: #fff; }
+.ai-ana { background: #7c3aed; color: #fff; }
+.ai-renka { background: #2563eb; color: #fff; }
+.ai-none { color: #64748b; }
 
-.horse-name { font-size: 0.92rem; font-weight: 800; color: #ffffff; }
-.sub-info { font-size: 0.7rem; color: #94a3b8; }
-.jockey-name { font-weight: 600; color: #f1f5f9; }
-.trainer-name { color: #cbd5e1; font-size: 0.8rem; }
-.odds-val { font-weight: 800; color: #f59e0b; font-size: 0.92rem; }
+.detail-card-inner {
+    background: #0f172a;
+    padding: 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    margin: 5px 0;
+    line-height: 1.6;
+}
 
-.detail-row { background: #18150c; }
-.detail-card-inner { padding: 10px; text-align: left; font-size: 0.82rem; color: #f1f5f9; }
+.detail-comment {
+    color: #cbd5e1;
+    margin-top: 5px;
+}
 
-.sim-input-row { margin-bottom: 12px; }
+.sim-input-row {
+    margin-bottom: 12px;
+}
+
+.kuina-input-sm {
+    padding: 6px;
+    background: #0f172a;
+    border: 1px solid #475569;
+    color: #fff;
+    border-radius: 4px;
+    width: 120px;
+}
+
 .sim-result-box {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
-    background: #111;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 10px;
+    background: #0f172a;
     padding: 12px;
     border-radius: 8px;
-    border: 1px solid #333;
-    font-size: 0.85rem;
 }
-.sim-result-box strong { color: #f59e0b; }
+
+.sim-res-item {
+    font-size: 12px;
+}
+
+.res-lbl {
+    color: var(--text-muted);
+    display: block;
+}
+
+.res-val {
+    font-size: 15px;
+    font-weight: bold;
+    color: #fff;
+}
+
+.sim-res-item.highlight .res-val {
+    color: var(--accent-gold);
+    font-size: 18px;
+}
