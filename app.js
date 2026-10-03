@@ -1,113 +1,23 @@
-// 🌪️ KUINA AI RACING ANALYTICS - 高精度JRAデータ解析 & タブ完全分離型統合ポータルモデル
+// 🌪️ KUINA AI RACING ANALYTICS - 高精度JRAデータ解析 ＆ 出馬表・資金配分統合モデル
 
-var CURRENT_HORSES_DATA = [];
-var CURRENT_VENUE_NAME = '東京';
-var CURRENT_RACE_NUM = 11;
-var ACTIVE_TAB_ID = 'race-card-tab';
-
-(function() {
-    function initKuinaPortal() {
-        if (typeof document === 'undefined') return;
-
+if (typeof document !== 'undefined') {
+    var updateHeader = function() {
         var h1El = document.querySelector('h1');
         if (h1El) h1El.innerHTML = '🦅 KUINA AI RACING ANALYTICS';
         var subEl = document.querySelector('.subtitle');
-        if (subEl) subEl.innerHTML = '🔥 JRA完全対応 ＆ KUINA AI予想コラム・多機能資金配分ポータル';
-
-        var container = document.querySelector('.container') || document.body;
+        if (subEl) subEl.innerHTML = '🔥 JRA完全対応 ＆ KUINA AIリアルタイム展開・3連単マルチ資金配分';
         
-        var existingNav = document.getElementById('kuina-tab-nav');
-        if (!existingNav) {
-            var nav = document.createElement('div');
-            nav.id = 'kuina-tab-nav';
-            nav.className = 'kuina-nav-container';
-            nav.innerHTML = 
-                '<button type="button" id="tab-btn-card" class="kuina-tab-btn active" onclick="switchKuinaTab(\'race-card-tab\')">🏇 出馬表・資金配分</button>' +
-                '<button type="button" id="tab-btn-col" class="kuina-tab-btn" onclick="switchKuinaTab(\'ai-column-tab\')">📰 AI予想コラム</button>' +
-                '<button type="button" id="tab-btn-db" class="kuina-tab-btn" onclick="switchKuinaTab(\'db-archive-tab\')">📚 過去データベース</button>';
-            
-            var selectorBox = document.querySelector('.selector-box');
-            if (selectorBox && selectorBox.parentNode) {
-                selectorBox.parentNode.insertBefore(nav, selectorBox);
-            } else if (container.firstChild) {
-                container.insertBefore(nav, container.firstChild);
-            } else {
-                container.appendChild(nav);
-            }
+        // タブナビゲーションが存在する場合は除去（タブ導入前の構成に完全復帰）
+        var oldNav = document.getElementById('kuina-tab-nav');
+        if (oldNav && oldNav.parentNode) {
+            oldNav.parentNode.removeChild(oldNav);
         }
+    };
 
-        ensureTabContainers();
-        switchKuinaTab('race-card-tab');
-    }
-
-    if (typeof document !== 'undefined') {
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initKuinaPortal);
-        } else {
-            initKuinaPortal();
-        }
-    }
-})();
-
-function ensureTabContainers() {
-    if (typeof document === 'undefined') return;
-    var container = document.querySelector('.container') || document.body;
-
-    if (!document.getElementById('kuina-ai-column-card')) {
-        var colCard = document.createElement('div');
-        colCard.id = 'kuina-ai-column-card';
-        colCard.className = 'prediction-box';
-        colCard.style.display = 'none';
-        colCard.innerHTML = '<div style="text-align:center;padding:20px;color:#aaa;">レース検索を実行すると、ここにAI予想コラムが表示されます。</div>';
-        container.appendChild(colCard);
-    }
-
-    if (!document.getElementById('kuina-db-archive-card')) {
-        var dbCard = document.createElement('div');
-        dbCard.id = 'kuina-db-archive-card';
-        dbCard.className = 'prediction-box';
-        dbCard.style.display = 'none';
-        dbCard.innerHTML = '<div style="text-align:center;padding:20px;color:#aaa;">レース検索を実行すると、ここに過去データベース（確定着順・オッズ結果）が表示されます。</div>';
-        container.appendChild(dbCard);
-    }
-}
-
-function switchKuinaTab(tabId) {
-    if (typeof document === 'undefined') return;
-    ACTIVE_TAB_ID = tabId;
-
-    var btns = document.querySelectorAll('.kuina-tab-btn');
-    btns.forEach(function(b) { b.classList.remove('active'); });
-
-    var activeBtnId = (tabId === 'race-card-tab') ? 'tab-btn-card' : ((tabId === 'ai-column-tab') ? 'tab-btn-col' : 'tab-btn-db');
-    var activeBtn = document.getElementById(activeBtnId);
-    if (activeBtn) activeBtn.classList.add('active');
-
-    var tbodyEl = document.getElementById('predict-tbody') || document.getElementById('tbody');
-    var cardTable = tbodyEl ? tbodyEl.closest('table') : document.querySelector('table');
-    var simCard = document.getElementById('fund-simulator-card');
-    var aiCard = document.getElementById('ai-bets-recommendation-card');
-    var colCard = document.getElementById('kuina-ai-column-card');
-    var dbCard = document.getElementById('kuina-db-archive-card');
-
-    if (tabId === 'race-card-tab') {
-        if (cardTable) cardTable.style.display = '';
-        if (aiCard) aiCard.style.display = (CURRENT_HORSES_DATA.length > 0) ? 'block' : 'none';
-        if (simCard) simCard.style.display = (CURRENT_HORSES_DATA.length > 0) ? 'block' : 'none';
-        if (colCard) colCard.style.display = 'none';
-        if (dbCard) dbCard.style.display = 'none';
-    } else if (tabId === 'ai-column-tab') {
-        if (cardTable) cardTable.style.display = 'none';
-        if (aiCard) aiCard.style.display = 'none';
-        if (simCard) simCard.style.display = 'none';
-        if (colCard) colCard.style.display = 'block';
-        if (dbCard) dbCard.style.display = 'none';
-    } else if (tabId === 'db-archive-tab') {
-        if (cardTable) cardTable.style.display = 'none';
-        if (aiCard) aiCard.style.display = 'none';
-        if (simCard) simCard.style.display = 'none';
-        if (colCard) colCard.style.display = 'none';
-        if (dbCard) dbCard.style.display = 'block';
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', updateHeader);
+    } else {
+        updateHeader();
     }
 }
 
@@ -130,7 +40,8 @@ function normalizeVenue(str) {
     for (var v in VENUE_MAPPING) {
         if (s.indexOf(v) !== -1) return v;
     }
-    if (s.indexOf('中京') !== -1 || s.indexOf('中') !== -1) return (s.indexOf('中山') !== -1 || (s.indexOf('中') !== -1 && s.indexOf('京') === -1)) ? '中山' : '中京';
+    if (s.indexOf('中京') !== -1) return '中京';
+    if (s.indexOf('中山') !== -1 || (s.indexOf('中') !== -1 && s.indexOf('京') === -1)) return '中山';
     if (s.indexOf('東') !== -1) return '東京';
     if (s.indexOf('京') !== -1) return '京都';
     if (s.indexOf('阪') !== -1) return '阪神';
@@ -164,6 +75,7 @@ function getDgBlockNumber(venueName) {
     return 1;
 }
 
+// JRA公式枠割りルールに基づく「枠番」動的計算関数
 function getJraWaku(num, total) {
     if (!num || num <= 0) return 1;
     if (!total || total <= 8) return Math.min(8, num);
@@ -186,8 +98,9 @@ function getJraWaku(num, total) {
     }
 }
 
+// CSVパース関数 (DGファイル ＆ 着順並びの2025-2026.csv 両対応)
 function parseCsvData(csvText, fileName, targetDate, targetVenue, targetRace) {
-    var lines = csvText.split('\n');
+    var lines = csvText.split(/\r?\n/);
     var horses = [];
 
     var isDgFile = (fileName.toUpperCase().indexOf('DG') !== -1 || fileName.indexOf('1003') !== -1 || fileName.indexOf('1004') !== -1);
@@ -205,8 +118,8 @@ function parseCsvData(csvText, fileName, targetDate, targetVenue, targetRace) {
             var parts = line.split(',').map(function(p) { return p.trim(); });
             if (parts.length >= 8 && /^\d+$/.test(parts[0])) {
                 var waku = parseInt(parts[0], 10) || 1;
-                var num = parts[1] && /^\d+$/.test(parts[1]) ? parseInt(parts[1], 10) : 1;
-                var name = parts[2] || '';
+                var num = parts[2] && /^\d+$/.test(parts[2]) ? parseInt(parts[2], 10) : 1;
+                var name = parts[7] || '';
 
                 if (name) {
                     if (num <= prevNum && prevNum > 0) {
@@ -215,13 +128,13 @@ function parseCsvData(csvText, fileName, targetDate, targetVenue, targetRace) {
                     prevNum = num;
 
                     if (currentRace === calcRaceTarget) {
-                        var sex = parts[3] || '牡';
-                        var age = parts[4] || '3';
-                        var jockey = parts[5] || '未定';
-                        var kinryo = parts[6] || '55';
-                        var oddsVal = parts[7] ? parseFloat(parts[7].replace('倍','')) : 0.0;
+                        var sex = parts[9] || '牡';
+                        var age = parts[10] || '3';
+                        var jockey = parts[12] || '未定';
+                        var kinryo = parts[13] || '55';
+                        var oddsVal = parts[15] ? parseFloat(parts[15].replace('倍','')) : 0.0;
                         if (isNaN(oddsVal)) oddsVal = 0.0;
-                        var trainer = parts[8] || '';
+                        var trainer = parts[17] || '';
 
                         horses.push({
                             rank: 0,
@@ -239,6 +152,7 @@ function parseCsvData(csvText, fileName, targetDate, targetVenue, targetRace) {
             }
         }
     } else {
+        // 2025-2026.csv 形式 (着順順データ ➔ 馬番順出馬表への高精度抽出変換)
         var venueKeywords = ['札幌', '函館', '福島', '新潟', '東京', '中山', '中京', '京都', '阪神', '小倉', 'ダート', '障害', 'リステッド', 'レース'];
         
         for (var i = 0; i < lines.length; i++) {
@@ -252,12 +166,13 @@ function parseCsvData(csvText, fileName, targetDate, targetVenue, targetRace) {
             if (lineDate.length === 6) lineDate = '20' + lineDate;
             if (lineDate !== targetDate) continue;
 
-            var lineVenue = normalizeVenue(tokens[1]) || normalizeVenue(tokens[0]);
+            var lineVenue = normalizeVenue(tokens[1]) || normalizeVenue(tokens[3]);
             if (lineVenue !== targetVenue) continue;
 
-            var lineRace = parseRaceNum(tokens[2]) || parseRaceNum(tokens[1]);
+            var lineRace = parseRaceNum(tokens[2]);
             if (lineRace !== targetRace) continue;
 
+            // 馬名（カタカナ）の位置をアンカーとして探索
             var nameIdx = -1;
             var horseName = '';
             for (var k = 2; k < tokens.length; k++) {
@@ -288,7 +203,7 @@ function parseCsvData(csvText, fileName, targetDate, targetVenue, targetRace) {
 
             horses.push({
                 rank: rank,
-                waku: 1,
+                waku: 1, // 後ほど総頭数から計算
                 num: num,
                 name: horseName,
                 sex_age: sexAge,
@@ -299,16 +214,19 @@ function parseCsvData(csvText, fileName, targetDate, targetVenue, targetRace) {
             });
         }
 
+        // 正確な「枠番」を自動割り当て
         var totalHorses = horses.length;
         for (var h = 0; h < horses.length; h++) {
             horses[h].waku = getJraWaku(horses[h].num, totalHorses);
         }
     }
 
+    // 馬番昇順（1番, 2番, 3番...）の出馬表へソート変換
     horses.sort(function(a, b) { return a.num - b.num; });
     return horses;
 }
 
+// 出馬表テーブル描画機能
 function renderRaceTable(tbodyEl, horses) {
     if (!tbodyEl) {
         tbodyEl = document.getElementById('predict-tbody') || document.getElementById('tbody');
@@ -355,89 +273,7 @@ function renderRaceTable(tbodyEl, horses) {
     tbodyEl.innerHTML = html;
 }
 
-function renderKuinaAiColumn(venue, raceNum, horses) {
-    ensureTabContainers();
-    var colCard = document.getElementById('kuina-ai-column-card');
-    if (!colCard) return;
-
-    if (!horses || horses.length === 0) {
-        colCard.innerHTML = '<p style="color:#aaa;text-align:center;">指定レースのデータが見つかりません。</p>';
-        return;
-    }
-
-    var valid = horses.filter(function(h) { return h.odds > 0; });
-    valid.sort(function(a, b) { return a.odds - b.odds; });
-    if (valid.length === 0) valid = horses;
-
-    var honmei = valid[0] || null;
-    var taikou = valid[1] || null;
-
-    var paceType = (horses.length >= 15) ? 'ミドル〜ハイペース' : 'ミドル〜スローペース';
-    var paceBadge = (horses.length >= 15) ? '<span style="background:#e11d48;color:#fff;padding:2px 6px;border-radius:4px;font-weight:bold;">ハイペース傾向</span>' : '<span style="background:#0284c7;color:#fff;padding:2px 6px;border-radius:4px;font-weight:bold;">瞬発力勝負</span>';
-
-    var html = '<div style="border-bottom:2px solid #d4af37;padding-bottom:8px;margin-bottom:12px;">';
-    html += '<span style="background:#d4af37;color:#000;font-size:0.75rem;padding:2px 6px;border-radius:3px;font-weight:bold;">KUINA AI 徹底追い切り＆展開分析コラム</span>';
-    html += '<h2 style="color:#fff;margin:8px 0 4px 0;font-size:1.15rem;">🔥 ' + venue + ' ' + raceNum + 'R 徹底攻略コラム — ' + (honmei ? honmei.name : '注目馬') + 'の一頭抜け出す信頼度解析</h2>';
-    html += '</div>';
-
-    html += '<div style="background:#111;padding:12px;border-radius:8px;border:1px solid #333;margin-bottom:12px;font-size:0.9rem;line-height:1.6;text-align:left;">';
-    html += '<h4 style="color:#d4af37;margin-top:0;">👑 【AI本命診断】 ' + (honmei ? honmei.num + '番 ' + honmei.name : '-') + ' の仕上がりと勝機</h4>';
-    html += '<p style="margin-bottom:8px;">今回の ' + venue + ' ' + raceNum + 'R において、KUINA AIが最も高い支持指数を算出させたのは <b>' + (honmei ? honmei.name : '本命馬') + '</b> (' + (honmei ? honmei.jockey + '騎手' : '') + ') だ。単勝オッズ ' + (honmei ? honmei.odds.toFixed(1) + '倍' : '-') + ' と指名度・総合指数ともに絶好の裏付けを示す。</p>';
-    html += '<p style="margin:0;">前走のラップタイムと血統適性、コース追切指数の全てでメンバー最高値をマーク。' + (taikou ? '対抗の ' + taikou.name + ' (' + taikou.jockey + '騎手) との一騎打ちが予想されるが、展開面の安定感で一歩リードする。' : '') + '</p>';
-    html += '</div>';
-
-    html += '<div style="background:#111;padding:12px;border-radius:8px;border:1px solid #333;font-size:0.9rem;line-height:1.6;text-align:left;">';
-    html += '<h4 style="color:#22c55e;margin-top:0;">⚡ 【展開＆波乱度AI予測】 ' + paceBadge + '</h4>';
-    html += '<p style="margin-bottom:8px;">出走頭数 ' + horses.length + '頭。想定ペースは <b>' + paceType + '</b>。前半のポジション争いから直線の攻防にかけて、先行勢の粘り込みか好位差しの脚質が有利に働く展開だ。</p>';
-    
-    var darkHorse = valid.length >= 5 ? valid[4] : null;
-    var upsetStar = darkHorse ? '★4 (中波乱注意)' : '★2 (堅調傾向)';
-    html += '<p style="margin:0;">波乱度指数: <b style="color:#f59e0b;">' + upsetStar + '</b>' + (darkHorse ? '。高回収率穴馬として <b>' + darkHorse.num + '番 ' + darkHorse.name + '</b> (' + darkHorse.odds.toFixed(1) + '倍) の激走に要警戒。' : '。') + '</p>';
-    html += '</div>';
-
-    colCard.innerHTML = html;
-}
-
-function renderKuinaDbArchive(venue, raceNum, horses) {
-    ensureTabContainers();
-    var dbCard = document.getElementById('kuina-db-archive-card');
-    if (!dbCard) return;
-
-    if (!horses || horses.length === 0) {
-        dbCard.innerHTML = '<p style="color:#aaa;text-align:center;">指定レースのデータが見つかりません。</p>';
-        return;
-    }
-
-    var html = '<h3 style="color:#d4af37;margin-top:0;">📚 KUINA 過去レース・データベースアーカイブ</h3>';
-    html += '<p style="color:#888;font-size:0.85rem;margin-bottom:12px;">' + venue + ' ' + raceNum + 'R 過去レース確定実績・結果記録</p>';
-
-    html += '<table style="width:100%;font-size:0.85rem;">';
-    html += '<tr><th>着順</th><th>枠/馬番</th><th>馬名</th><th>騎手</th><th>確定オッズ</th></tr>';
-
-    var rankedHorses = horses.slice();
-    rankedHorses.sort(function(a, b) { 
-        if (a.rank > 0 && b.rank > 0) return a.rank - b.rank;
-        return a.num - b.num;
-    });
-
-    for (var i = 0; i < rankedHorses.length; i++) {
-        var rh = rankedHorses[i];
-        var rankStr = rh.rank > 0 ? '<b>' + rh.rank + '着</b>' : '-';
-        var rankStyle = rh.rank === 1 ? 'color:#ef4444;font-size:1rem;' : (rh.rank === 2 ? 'color:#3b82f6;' : (rh.rank === 3 ? 'color:#f59e0b;' : 'color:#aaa;'));
-
-        html += '<tr>';
-        html += '<td style="' + rankStyle + '">' + rankStr + '</td>';
-        html += '<td>' + rh.waku + '枠' + rh.num + '番</td>';
-        html += '<td><b>' + rh.name + '</b></td>';
-        html += '<td>' + rh.jockey + '</td>';
-        html += '<td style="color:#d4af37;font-weight:bold;">' + (rh.odds > 0 ? rh.odds.toFixed(1) + '倍' : '-') + '</td>';
-        html += '</tr>';
-    }
-    html += '</table>';
-
-    dbCard.innerHTML = html;
-}
-
+// 🤖 KUINA AI 推奨買い目カード (複数馬券 ＆ 3連単マルチ対応)
 function renderAiBetsCard(horses) {
     var card = document.getElementById('ai-bets-recommendation-card');
     if (!card) {
@@ -452,6 +288,7 @@ function renderAiBetsCard(horses) {
         card.style.display = 'none';
         return;
     }
+    card.style.display = 'block';
 
     var valid = horses.filter(function(h) { return h.odds > 0; });
     valid.sort(function(a, b) { return a.odds - b.odds; });
@@ -500,6 +337,7 @@ function renderAiBetsCard(horses) {
     card.innerHTML = html;
 }
 
+// 💰 資金配分シミュレーター (複数馬券＆3連単マルチ対応)
 function renderFundSimulator(horses) {
     var simCard = document.getElementById('fund-simulator-card');
     if (!simCard) {
@@ -510,7 +348,7 @@ function renderFundSimulator(horses) {
         container.appendChild(simCard);
     }
 
-    var html = '<h3 style="color:#d4af37;margin-top:0;">💰 ⑥ 資金配分シミュレーター (複数馬券＆3連単マルチ)</h3>';
+    var html = '<h3 style="color:#d4af37;margin-top:0;">💰 資金配分シミュレーター (複数馬券＆3連単マルチ)</h3>';
     
     html += '<div style="background:#111;padding:10px;border-radius:8px;border:1px solid #333;margin-bottom:12px;text-align:left;">';
     html += '<div style="color:#aaa;font-size:0.85rem;margin-bottom:6px;font-weight:bold;">【対象馬券種を選択 (複数選択可)】:</div>';
@@ -699,9 +537,6 @@ async function loadAndUnzipJraDatabase() {
     var cV = normalizeVenue(rawVenue);
     var cR = parseRaceNum(rawRace);
 
-    CURRENT_VENUE_NAME = cV;
-    CURRENT_RACE_NUM = cR;
-
     if (btnEl) btnEl.innerText = '⚡ データ照合中...';
 
     var targetFile = '2025-2026.csv';
@@ -741,15 +576,9 @@ async function loadAndUnzipJraDatabase() {
             return;
         }
 
-        CURRENT_HORSES_DATA = horses;
-
         renderRaceTable(tbodyEl, horses);
         renderAiBetsCard(horses);
         renderFundSimulator(horses);
-        renderKuinaAiColumn(cV, cR, horses);
-        renderKuinaDbArchive(cV, cR, horses);
-
-        switchKuinaTab(ACTIVE_TAB_ID);
 
         if (btnEl) btnEl.innerText = '🧠 指定レースのデータ検索を実行';
     } catch (err) {
