@@ -1,4 +1,9 @@
-// 🌪️ KUINA AI RACING ANALYTICS - 高精度JRAデータ解析 & netkeiba風AIコラム・過去データベース統合ポータルモデル
+// 🌪️ KUINA AI RACING ANALYTICS - 高精度JRAデータ解析 & タブ完全分離型統合ポータルモデル
+
+var CURRENT_HORSES_DATA = [];
+var CURRENT_VENUE_NAME = '東京';
+var CURRENT_RACE_NUM = 11;
+var ACTIVE_TAB_ID = 'race-card-tab';
 
 (function() {
     function initKuinaPortal() {
@@ -10,6 +15,8 @@
         if (subEl) subEl.innerHTML = '🔥 JRA完全対応 ＆ KUINA AI予想コラム・多機能資金配分ポータル';
 
         var container = document.querySelector('.container') || document.body;
+        
+        // タブナビゲーションの作成
         var existingNav = document.getElementById('kuina-tab-nav');
         if (!existingNav) {
             var nav = document.createElement('div');
@@ -29,6 +36,11 @@
                 container.appendChild(nav);
             }
         }
+
+        // 各タブ用コンテナの準備
+        ensureTabContainers();
+        // 初期状態の表示制御
+        switchKuinaTab('race-card-tab');
     }
 
     if (typeof document !== 'undefined') {
@@ -40,17 +52,45 @@
     }
 })();
 
-// タブ切り替え処理
+// 各タブ用コンテナの準備
+function ensureTabContainers() {
+    var container = document.querySelector('.container') || document.body;
+
+    // AIコラムカード
+    if (!document.getElementById('kuina-ai-column-card')) {
+        var colCard = document.createElement('div');
+        colCard.id = 'kuina-ai-column-card';
+        colCard.className = 'prediction-box';
+        colCard.style.display = 'none';
+        colCard.innerHTML = '<div style="text-align:center;padding:20px;color:#aaa;">レース検索を実行すると、ここにAI予想コラムが表示されます。</div>';
+        container.appendChild(colCard);
+    }
+
+    // 過去データベースカード
+    if (!document.getElementById('kuina-db-archive-card')) {
+        var dbCard = document.createElement('div');
+        dbCard.id = 'kuina-db-archive-card';
+        dbCard.className = 'prediction-box';
+        dbCard.style.display = 'none';
+        dbCard.innerHTML = '<div style="text-align:center;padding:20px;color:#aaa;">レース検索を実行すると、ここに過去データベース（確定着順・オッズ結果）が表示されます。</div>';
+        container.appendChild(dbCard);
+    }
+}
+
+// タブ切り替え処理（完全分離）
 function switchKuinaTab(tabId) {
     if (typeof document === 'undefined') return;
+    ACTIVE_TAB_ID = tabId;
 
+    // ボタンのactiveクラス切り替え
     var btns = document.querySelectorAll('.kuina-tab-btn');
     btns.forEach(function(b) { b.classList.remove('active'); });
 
-    var activeBtnId = tabId === 'race-card-tab' ? 'tab-btn-card' : (tabId === 'ai-column-tab' ? 'tab-btn-col' : 'tab-btn-db');
+    var activeBtnId = (tabId === 'race-card-tab') ? 'tab-btn-card' : ((tabId === 'ai-column-tab') ? 'tab-btn-col' : 'tab-btn-db');
     var activeBtn = document.getElementById(activeBtnId);
     if (activeBtn) activeBtn.classList.add('active');
 
+    // 要素取得
     var tbodyEl = document.getElementById('predict-tbody') || document.getElementById('tbody');
     var cardTable = tbodyEl ? tbodyEl.closest('table') : document.querySelector('table');
     var simCard = document.getElementById('fund-simulator-card');
@@ -58,22 +98,23 @@ function switchKuinaTab(tabId) {
     var colCard = document.getElementById('kuina-ai-column-card');
     var dbCard = document.getElementById('kuina-db-archive-card');
 
+    // 画面切り替えの可視化制御
     if (tabId === 'race-card-tab') {
         if (cardTable) cardTable.style.display = '';
-        if (simCard) simCard.style.display = 'block';
-        if (aiCard) aiCard.style.display = 'block';
+        if (aiCard) aiCard.style.display = (CURRENT_HORSES_DATA.length > 0) ? 'block' : 'none';
+        if (simCard) simCard.style.display = (CURRENT_HORSES_DATA.length > 0) ? 'block' : 'none';
         if (colCard) colCard.style.display = 'none';
         if (dbCard) dbCard.style.display = 'none';
     } else if (tabId === 'ai-column-tab') {
         if (cardTable) cardTable.style.display = 'none';
+        if (aiCard) aiCard.style.display = 'none';
         if (simCard) simCard.style.display = 'none';
-        if (aiCard) aiCard.style.display = 'block';
         if (colCard) colCard.style.display = 'block';
         if (dbCard) dbCard.style.display = 'none';
     } else if (tabId === 'db-archive-tab') {
         if (cardTable) cardTable.style.display = 'none';
-        if (simCard) simCard.style.display = 'none';
         if (aiCard) aiCard.style.display = 'none';
+        if (simCard) simCard.style.display = 'none';
         if (colCard) colCard.style.display = 'none';
         if (dbCard) dbCard.style.display = 'block';
     }
@@ -122,7 +163,7 @@ function normalizeDateStr(str) {
 function parseRaceNum(str) {
     if (!str) return 1;
     var m = str.toString().match(/\d+/);
-    return m ? parseInt(m[0], 10) : 1;
+    return m ? parseInt(m, 10) : 1;
 }
 
 function getDgBlockNumber(venueName) {
@@ -174,8 +215,8 @@ function parseCsvData(csvText, fileName, targetDate, targetVenue, targetRace) {
             var parts = line.split(',').map(function(p) { return p.trim(); });
             if (parts.length >= 8 && /^\d+$/.test(parts[0])) {
                 var waku = parseInt(parts[0], 10) || 1;
-                var num = parts[2] && /^\d+$/.test(parts[2]) ? parseInt(parts[2], 10) : 1;
-                var name = parts[7] || '';
+                var num = parts[1] && /^\d+$/.test(parts[1]) ? parseInt(parts[1], 10) : 1;
+                var name = parts[2] || '';
 
                 if (name) {
                     if (num <= prevNum && prevNum > 0) {
@@ -184,13 +225,13 @@ function parseCsvData(csvText, fileName, targetDate, targetVenue, targetRace) {
                     prevNum = num;
 
                     if (currentRace === calcRaceTarget) {
-                        var sex = parts[9] || '牡';
-                        var age = parts[10] || '3';
-                        var jockey = parts[12] || '未定';
-                        var kinryo = parts[13] || '55';
-                        var oddsVal = parts[15] ? parseFloat(parts[15].replace('倍','')) : 0.0;
+                        var sex = parts[3] || '牡';
+                        var age = parts[4] || '3';
+                        var jockey = parts[5] || '未定';
+                        var kinryo = parts[6] || '55';
+                        var oddsVal = parts[7] ? parseFloat(parts[7].replace('倍','')) : 0.0;
                         if (isNaN(oddsVal)) oddsVal = 0.0;
-                        var trainer = parts[17] || '';
+                        var trainer = parts[8] || '';
 
                         horses.push({
                             rank: 0,
@@ -221,10 +262,10 @@ function parseCsvData(csvText, fileName, targetDate, targetVenue, targetRace) {
             if (lineDate.length === 6) lineDate = '20' + lineDate;
             if (lineDate !== targetDate) continue;
 
-            var lineVenue = normalizeVenue(tokens[1]) || normalizeVenue(tokens[0]);
+            var lineVenue = normalizeVenue(tokens[1]) || normalizeVenue(tokens[2]);
             if (lineVenue !== targetVenue) continue;
 
-            var lineRace = parseRaceNum(tokens[2]);
+            var lineRace = parseRaceNum(tokens[2]) || parseRaceNum(tokens[1]);
             if (lineRace !== targetRace) continue;
 
             var nameIdx = -1;
@@ -325,18 +366,12 @@ function renderRaceTable(tbodyEl, horses) {
 }
 
 function renderKuinaAiColumn(venue, raceNum, horses) {
+    ensureTabContainers();
     var colCard = document.getElementById('kuina-ai-column-card');
-    if (!colCard) {
-        colCard = document.createElement('div');
-        colCard.id = 'kuina-ai-column-card';
-        colCard.className = 'prediction-box';
-        colCard.style.display = 'none';
-        var container = document.querySelector('.container') || document.body;
-        container.appendChild(colCard);
-    }
+    if (!colCard) return;
 
     if (!horses || horses.length === 0) {
-        colCard.innerHTML = '<p style="color:#aaa;">データがありません。</p>';
+        colCard.innerHTML = '<p style="color:#aaa;text-align:center;">指定レースのデータが見つかりません。</p>';
         return;
     }
 
@@ -374,23 +409,17 @@ function renderKuinaAiColumn(venue, raceNum, horses) {
 }
 
 function renderKuinaDbArchive(venue, raceNum, horses) {
+    ensureTabContainers();
     var dbCard = document.getElementById('kuina-db-archive-card');
-    if (!dbCard) {
-        dbCard = document.createElement('div');
-        dbCard.id = 'kuina-db-archive-card';
-        dbCard.className = 'prediction-box';
-        dbCard.style.display = 'none';
-        var container = document.querySelector('.container') || document.body;
-        container.appendChild(dbCard);
-    }
+    if (!dbCard) return;
 
     if (!horses || horses.length === 0) {
-        dbCard.innerHTML = '<p style="color:#aaa;">データがありません。</p>';
+        dbCard.innerHTML = '<p style="color:#aaa;text-align:center;">指定レースのデータが見つかりません。</p>';
         return;
     }
 
     var html = '<h3 style="color:#d4af37;margin-top:0;">📚 KUINA 過去レース・データベースアーカイブ</h3>';
-    html += '<p style="color:#888;font-size:0.85rem;margin-bottom:12px;">選択レースの着順確定実績・結果記録</p>';
+    html += '<p style="color:#888;font-size:0.85rem;margin-bottom:12px;">' + venue + ' ' + raceNum + 'R 過去レース確定実績・結果記録</p>';
 
     html += '<table style="width:100%;font-size:0.85rem;">';
     html += '<tr><th>着順</th><th>枠/馬番</th><th>馬名</th><th>騎手</th><th>確定オッズ</th></tr>';
@@ -433,7 +462,6 @@ function renderAiBetsCard(horses) {
         card.style.display = 'none';
         return;
     }
-    card.style.display = 'block';
 
     var valid = horses.filter(function(h) { return h.odds > 0; });
     valid.sort(function(a, b) { return a.odds - b.odds; });
@@ -681,6 +709,9 @@ async function loadAndUnzipJraDatabase() {
     var cV = normalizeVenue(rawVenue);
     var cR = parseRaceNum(rawRace);
 
+    CURRENT_VENUE_NAME = cV;
+    CURRENT_RACE_NUM = cR;
+
     if (btnEl) btnEl.innerText = '⚡ データ照合中...';
 
     var targetFile = '2025-2026.csv';
@@ -720,11 +751,15 @@ async function loadAndUnzipJraDatabase() {
             return;
         }
 
+        CURRENT_HORSES_DATA = horses;
+
         renderRaceTable(tbodyEl, horses);
         renderAiBetsCard(horses);
         renderFundSimulator(horses);
         renderKuinaAiColumn(cV, cR, horses);
         renderKuinaDbArchive(cV, cR, horses);
+
+        switchKuinaTab(ACTIVE_TAB_ID);
 
         if (btnEl) btnEl.innerText = '🧠 指定レースのデータ検索を実行';
     } catch (err) {
