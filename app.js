@@ -1,184 +1,341 @@
-// 🌪️【KUINA RACING ANALYTICS - 完全決定版 app.js】
+// 🌪️ KUINA AI RACING ANALYTICS - 高精度JRAデータ解析エンジン & ダッシュボード統合モデル
 
-function resolveVenueName(v) {
-    if (!v) return "";
-    var raw = v.toString().replace(/競馬場/g, "").replace(/\s+/g, "").trim();
-    var map = {
-        "札幌": "札幌", "函館": "函館", "福島": "福島", "新潟": "新潟",
-        "東京": "東京", "中山": "中山", "中京": "中京", "京都": "京都",
-        "阪神": "阪神", "小倉": "小倉",
-        "01": "札幌", "02": "函館", "03": "福島", "04": "新潟",
-        "05": "東京", "06": "中山", "07": "中京", "08": "京都",
-        "09": "阪神", "10": "小倉",
-        "札": "札幌", "函": "函館", "福": "福島", "新": "新潟",
-        "東": "東京", "中": "中山", "京": "中京", "都": "京都",
-        "阪": "阪神", "小": "小倉"
-    };
-    if (map[raw]) return map[raw];
-    for (var k in map) {
-        if (raw.indexOf(k) !== -1) return map[k];
+var VENUE_MAPPING = {
+    "東京": { name: "東京", code: "05", venueIdx: 1 },
+    "中山": { name: "中山", code: "06", venueIdx: 1 },
+    "京都": { name: "京都", code: "08", venueIdx: 2 },
+    "阪神": { name: "阪神", code: "09", venueIdx: 2 },
+    "中京": { name: "中京", code: "07", venueIdx: 2 },
+    "新潟": { name: "新潟", code: "04", venueIdx: 1 },
+    "福島": { name: "福島", code: "03", venueIdx: 1 },
+    "小倉": { name: "小倉", code: "10", venueIdx: 2 },
+    "札幌": { name: "札幌", code: "01", venueIdx: 1 },
+    "函館": { name: "函館", code: "02", venueIdx: 1 }
+};
+
+function normalizeVenue(str) {
+    if (!str) return "東京";
+    var s = str.toString();
+    for (var v in VENUE_MAPPING) {
+        if (s.indexOf(v) !== -1 || s.indexOf(VENUE_MAPPING[v].code) !== -1) {
+            return v;
+        }
     }
-    return raw;
+    return "東京";
 }
 
-function getDomValue(idList) {
-    for (var i = 0; i < idList.length; i++) {
-        var el = document.getElementById(idList[i]);
-        if (el && el.value !== undefined && el.value !== "") return el.value;
-    }
-    return "";
+function normalizeDateStr(str) {
+    if (!str) return "";
+    var clean = str.toString().replace(/[-/]/g, "").trim();
+    if (clean.length === 6) clean = "20" + clean;
+    return clean;
 }
 
-function loadAndUnzipJraDatabase() {
-    // 🟥 【追跡1】ボタン押下チェック
-    alert("➔ [1/7] [ボタン押下成功] 正常にプログラムの1行目が作動しました！");
+function parseRaceNum(str) {
+    if (!str) return 1;
+    var m = str.toString().match(/\d+/);
+    return m ? parseInt(m[0], 10) : 1;
+}
 
-    var rawDate = getDomValue(["sim-date", "sim_date", "date", "race-date"]);
-    var rawVenue = getDomValue(["sim-venue", "sim_venue", "venue", "race-venue"]);
-    var rawRace = getDomValue(["sim-race", "sim_race", "race", "race-num"]);
+// CSVパース関数
+function parseCsvData(csvText, fileName, targetDate, targetVenue, targetRace) {
+    var lines = csvText.split(/\r?\n/);
+    var horses = [];
 
-    if (!rawDate) {
-        alert("❌ 日付を選択してください（日付入力フォームが見つかりません）");
+    var isDgFile = (fileName.toUpperCase().indexOf("DG") !== -1 || fileName.indexOf("1003") !== -1 || fileName.indexOf("1004") !== -1);
+
+    if (isDgFile) {
+        // DG形式 (DG261003.CSV / DG261004.CSV)
+        var vInfo = VENUE_MAPPING[targetVenue] || { venueIdx: 1 };
+        var calcRaceTarget = (vInfo.venueIdx === 2) ? (targetRace + 12) : targetRace;
+
+        var currentRace = 1;
+        var prevNum = 0;
+
+        for (var i = 0; i < lines.length; i++) {
+            var line = lines[i].strip ? lines[i].strip() : lines[i].trim();
+            if (!line || line.indexOf("枠番") !== -1) continue;
+
+            var parts = line.split(",").map(function(p) { return p.trim(); });
+            if (parts.length >= 8 && /^\d+$/.test(parts[0])) {
+                var waku = parseInt(parts[0], 10) || 1;
+                var num = parts[2] && /^\d+$/.test(parts[2]) ? parseInt(parts[2], 10) : 1;
+                var name = parts[7] || "";
+
+                if (name) {
+                    if (num <= prevNum && prevNum > 0) {
+                        currentRace++;
+                    }
+                    prevNum = num;
+
+                    if (currentRace === calcRaceTarget || currentRace === targetRace) {
+                        var sex = parts[9] || "牡";
+                        var age = parts[10] || "3";
+                        var jockey = parts[12] || "未定";
+                        var kinryo = parts[13] || "55";
+                        var oddsVal = parts[15] ? parseFloat(parts[15].replace("倍","")) : 0.0;
+                        if (isNaN(oddsVal)) oddsVal = 0.0;
+                        var trainer = parts[17] || "";
+
+                        horses.push({
+                            waku: waku,
+                            num: num,
+                            name: name,
+                            sex_age: sex + age,
+                            jockey: jockey,
+                            kinryo: kinryo,
+                            odds: oddsVal,
+                            trainer: trainer
+                        });
+                    }
+                }
+            }
+        }
+    } else {
+        // 2025-2026.csv 形式
+        for (var i = 0; i < lines.length; i++) {
+            var line = lines[i].trim();
+            if (!line || line.indexOf("日付") !== -1 || line.indexOf("date") !== -1) continue;
+
+            var tokens = line.split(/[\s,\t|]+/).filter(Boolean);
+            if (tokens.length < 6) continue;
+
+            var lineDate = tokens[0].replace(/[-/]/g, "").trim();
+            if (lineDate.length === 6) lineDate = "20" + lineDate;
+
+            if (lineDate !== targetDate) continue;
+
+            var lineVenue = normalizeVenue(tokens[1]);
+            if (lineVenue !== targetVenue) continue;
+
+            var lineRace = parseRaceNum(tokens[2]);
+            if (lineRace !== targetRace) continue;
+
+            // 各列の抽出
+            var waku = parseInt(tokens[3], 10) || 1;
+            var num = parseInt(tokens[4], 10) || 1;
+            var name = tokens[5] || "競走馬";
+            var jockey = tokens[6] || "騎手";
+            var oddsVal = parseFloat(tokens[7]) || 0.0;
+            var trainer = tokens[8] || "";
+
+            horses.push({
+                waku: waku,
+                num: num,
+                name: name,
+                sex_age: "牡3",
+                jockey: jockey,
+                kinryo: "55",
+                odds: oddsVal,
+                trainer: trainer
+            });
+        }
+    }
+
+    horses.sort(function(a, b) { return a.num - b.num; });
+    return horses;
+}
+
+// テーブルレンダリング機能
+function renderRaceTable(tbodyEl, horses) {
+    if (!tbodyEl) {
+        tbodyEl = document.getElementById("predict-tbody") || document.getElementById("tbody");
+    }
+    if (!tbodyEl) return;
+
+    var html = "";
+    for (var i = 0; i < horses.length; i++) {
+        var h = horses[i];
+        
+        // AI印の算出
+        var aiMark = "-";
+        if (h.odds > 0 && h.odds <= 3.5) {
+            aiMark = "<span class='badge-win'>◎ 本命</span>";
+        } else if (h.odds > 3.5 && h.odds <= 7.0) {
+            aiMark = "<span class='badge-place'>〇 対抗</span>";
+        } else if (h.odds > 7.0 && h.odds <= 12.0) {
+            aiMark = "<span style='color:#d4af37;font-weight:bold;'>▲ 単穴</span>";
+        } else if (h.odds > 12.0 && h.odds <= 20.0) {
+            aiMark = "<span style='color:#a855f7;font-weight:bold;'>△ 連下</span>";
+        }
+
+        var oddsStr = (h.odds > 0) ? h.odds.toFixed(1) + "倍" : "未確定";
+
+        html += "<tr onclick='toggleHorseDetail(" + h.num + ")' style='cursor:pointer;'>";
+        html += "<td style='font-weight:bold;'>" + h.waku + "枠" + h.num + "番</td>";
+        html += "<td>" + aiMark + "</td>";
+        html += "<td><b style='color:#fff;font-size:1.02rem;'>" + h.name + "</b><br><small style='color:#888;'>" + h.sex_age + "</small></td>";
+        html += "<td>" + h.jockey + "</td>";
+        html += "<td>" + h.trainer + "</td>";
+        html += "<td style='color:#d4af37;font-weight:bold;font-size:1.05rem;'>" + oddsStr + "</td>";
+        html += "</tr>";
+    }
+
+    tbodyEl.innerHTML = html;
+}
+
+// ダッシュボード・コンポーネント更新機能
+function updateDashboardComponents(venue, raceNum, horses) {
+    // ⑥ 資金配分シミュレーターのレンダリング
+    renderFundSimulator(horses);
+}
+
+// ⑥ 資金配分シミュレーター
+function renderFundSimulator(horses) {
+    var simCard = document.getElementById("fund-simulator-card");
+    if (!simCard) {
+        simCard = document.createElement("div");
+        simCard.id = "fund-simulator-card";
+        simCard.className = "prediction-box";
+        var container = document.querySelector(".container") || document.body;
+        container.appendChild(simCard);
+    }
+
+    var html = "<h3 style='color:#d4af37;margin-top:0;'>💰 ⑥ 資金配分シミュレーター</h3>";
+    html += "<div style='display:flex;gap:10px;align-items:center;margin-bottom:12px;'>";
+    html += "<label style='color:#aaa;font-size:0.9rem;'>総予算(円): </label>";
+    html += "<input type='number' id='total-budget' value='10000' step='1000' onchange='calculateAllocation()' style='width:120px;padding:6px;background:#111;color:#fff;border:1px solid #444;border-radius:6px;text-align:right;'>";
+    html += "</div>";
+
+    html += "<div style='max-height:200px;overflow-y:auto;background:#111;padding:8px;border-radius:8px;border:1px solid #333;'>";
+    for (var i = 0; i < horses.length; i++) {
+        var h = horses[i];
+        var checked = (i < 3) ? "checked" : "";
+        html += "<div style='display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #222;'>";
+        html += "<label><input type='checkbox' class='sim-horse-chk' value='" + h.odds + "' data-num='" + h.num + "' data-name='" + h.name + "' " + checked + " onchange='calculateAllocation()'> " + h.num + "番 " + h.name + "</label>";
+        html += "<span style='color:#d4af37;font-weight:bold;'>" + (h.odds > 0 ? h.odds.toFixed(1) + "倍" : "-") + "</span>";
+        html += "</div>";
+    }
+    html += "</div>";
+
+    html += "<div id='sim-result' style='margin-top:12px;padding:10px;background:#221d10;border:1px solid #d4af37;border-radius:8px;font-size:0.9rem;'>";
+    html += "計算中...";
+    html += "</div>";
+
+    simCard.innerHTML = html;
+    calculateAllocation();
+}
+
+// 資金配分リアルタイム計算
+function calculateAllocation() {
+    var budgetEl = document.getElementById("total-budget");
+    var totalBudget = budgetEl ? (parseInt(budgetEl.value, 10) || 10000) : 10000;
+
+    var chks = document.querySelectorAll(".sim-horse-chk");
+    var selected = [];
+    var invOddsSum = 0;
+
+    chks.forEach(function(chk) {
+        if (chk.checked) {
+            var odds = parseFloat(chk.value) || 0;
+            if (odds > 0) {
+                var num = chk.getAttribute("data-num");
+                var name = chk.getAttribute("data-name");
+                selected.push({ num: num, name: name, odds: odds });
+                invOddsSum += (1.0 / odds);
+            }
+        }
+    });
+
+    var resEl = document.getElementById("sim-result");
+    if (!resEl) return;
+
+    if (selected.length === 0 || invOddsSum === 0) {
+        resEl.innerHTML = "<span style='color:#888;'>対象の馬を選択してください</span>";
         return;
     }
 
-    var cG = rawDate.replace(/-/g, "").replace(/\//g, "").trim();
-    if (cG.length === 6) cG = "20" + cG;
+    var synthOdds = (1.0 / invOddsSum).toFixed(2);
+    var expReturn = Math.floor(totalBudget * synthOdds);
 
-    var cV = resolveVenueName(rawVenue);
-    var cR_num = parseInt(rawRace.replace(/[^0-9]/g, ""), 10) || 11;
-    var cR = cR_num + "R";
+    var resHtml = "<b>合成オッズ: <span style='color:#d4af37;font-size:1.1rem;'>" + synthOdds + "倍</span></b>";
+    resHtml += " | 想定払戻: <span style='color:#22c55e;font-weight:bold;'>" + expReturn.toLocaleString() + "円</span><br><br>";
+    resHtml += "<table style='width:100%;font-size:0.8rem;'><tr><th>馬番/馬名</th><th>オッズ</th><th>推奨購入額</th><th>想定的中時払戻</th></tr>";
 
-    var btn = document.getElementById("predict-btn") || document.querySelector("button");
-    if (btn) btn.innerText = "⚡ 精密デバッグ検証中...";
+    selected.forEach(function(s) {
+        var bet = Math.round((totalBudget * (1.0 / s.odds) / invOddsSum) / 100) * 100;
+        var payout = Math.floor(bet * s.odds);
+        resHtml += "<tr><td>" + s.num + "番 " + s.name + "</td><td>" + s.odds.toFixed(1) + "倍</td><td><b>" + bet.toLocaleString() + "円</b></td><td>" + payout.toLocaleString() + "円</td></tr>";
+    });
+    resHtml += "</table>";
 
-    var generated_search_id = "日付:" + cG + " | 競馬場:" + cV + " | レース番号:" + cR;
-    alert("📋 [デバッグ表示：画面から入力された検索対象ID]\n" +
-          "-----------------------------------------\n" +
-          "■ 入力された日付 (cG): " + cG + "\n" +
-          "■ 入力された競馬場 (cV): " + cV + "\n" +
-          "■ 入力されたレース番号 (cR): " + cR + "\n" +
-          "■ プログラムが生成した【検索対象レースID】:\n" +
-          "   ➔ 「" + generated_search_id + "」");
+    resEl.innerHTML = resHtml;
+}
 
-    // 🚀 【追跡2】CSV取得通信（fetch）の開始
-    var target_csv_url = "2025-2026.csv";
-    alert("➔ [2/7] [API到達成功] これより同じ部屋にある '" + target_csv_url + "' へ通信(fetch)を開始します。");
+// エラー通知バナー
+function showErrorNotice(msg) {
+    var banner = document.getElementById("error-banner");
+    if (!banner) {
+        banner = document.createElement("div");
+        banner.id = "error-banner";
+        banner.style.cssText = "background:#7f1d1d;color:#fca5a5;padding:12px;border-radius:8px;margin-top:15px;border:1px solid #ef4444;text-align:center;font-weight:bold;font-size:0.9rem;";
+        var container = document.querySelector(".container") || document.body;
+        container.appendChild(banner);
+    }
+    banner.innerText = "⚠️ " + msg;
+    banner.style.display = "block";
+}
 
-    fetch(target_csv_url, { method: "GET", cache: "no-cache" })
-        .then(function(response) {
-            alert("➔ [3/7] [検索開始成功] サーバーから電波が戻りました！\n■ 通信成功フラグ(ok): " + response.ok + "\n■ HTTPステータス: " + response.status);
-            if (!response.ok) {
-                alert("❌ 警告: サーバー上に '2025-2026.csv' が見つかりません。");
-                throw new Error("CSVファイル取得失敗 (HTTP " + response.status + ")");
-            }
-            return response.arrayBuffer();
-        })
-        .then(function(buffer) {
-            alert("➔ [4/7] [CSV読み込み開始] 成功！\nこれより、Shift-JIS/UTF-8デコード処理を行います。");
+// メイン実行関数
+async function loadAndUnzipJraDatabase() {
+    var banner = document.getElementById("error-banner");
+    if (banner) banner.style.display = "none";
 
-            var decoder = new TextDecoder("shift_jis");
-            var text = decoder.decode(buffer);
+    var dateEl = document.getElementById("sim-date") || document.getElementById("date");
+    var venueEl = document.getElementById("sim-venue") || document.getElementById("venue");
+    var raceEl = document.getElementById("sim-race") || document.getElementById("race");
+    var btnEl = document.getElementById("predict-btn") || document.getElementById("btn-predict");
+    var tbodyEl = document.getElementById("predict-tbody") || document.getElementById("tbody");
 
-            if (text.indexOf("日付") === -1 && text.indexOf("枠") === -1) {
-                var utfDecoder = new TextDecoder("utf-8");
-                text = utfDecoder.decode(buffer);
-            }
+    var rawDate = dateEl ? dateEl.value : "2026-10-03";
+    var rawVenue = venueEl ? venueEl.value : "東京";
+    var rawRace = raceEl ? raceEl.value : "11";
 
-            var allLines = text.split(/\r?\n/);
-            alert("➔ [翻訳成功] デコード処理を通過しました！\nデータ行数: " + allLines.length + "行。\nこれより条件のガチ比較を行います。");
+    var cG = normalizeDateStr(rawDate);
+    var cV = normalizeVenue(rawVenue);
+    var cR = parseRaceNum(rawRace);
 
-            var matched_horses = [];
-            var debug_log_count = 0;
+    if (btnEl) btnEl.innerText = "⚡ データ照合中...";
 
-            for (var i = 0; i < allLines.length; i++) {
-                var line = allLines[i].trim();
-                if (!line) continue;
+    var targetFile = "2025-2026.csv";
+    if (cG === "20261003") {
+        targetFile = "DG261003.CSV";
+    } else if (cG === "20261004") {
+        targetFile = "DG261004.CSV";
+    }
 
-                var d = line.split(/[\s,\t|]+/).map(function(t) { return t.trim(); }).filter(Boolean);
-                if (d.length < 5) continue;
-                if (d.indexOf("日付") !== -1 || d.indexOf("date") !== -1) continue;
+    try {
+        var response = await fetch(targetFile, { method: "GET", cache: "no-cache" });
+        if (!response.ok) {
+            var altName = (targetFile === "DG261003.CSV") ? "DG261003.csv" : (targetFile === "DG261004.CSV" ? "DG261004.csv" : "2025-2026.csv");
+            response = await fetch(altName, { method: "GET", cache: "no-cache" });
+        }
 
-                try {
-                    var raw_file_date = d[0].toString();
-                    var file_date = raw_file_date.replace(/-/g, "").replace(/\//g, "").trim();
-                    if (file_date.length === 6) file_date = "20" + file_date;
+        if (!response.ok) {
+            if (btnEl) btnEl.innerText = "🧠 指定レースのデータ検索を実行";
+            showErrorNotice("対象ファイル (" + targetFile + ") の読み込みに失敗しました。ファイルがサーバー上に正しく配置されているかご確認ください。");
+            return;
+        }
 
-                    var raw_file_venue = d[1] ? d[1].toString().trim() : "";
-                    var file_venue = resolveVenueName(raw_file_venue);
+        var buffer = await response.arrayBuffer();
+        var decoder = new TextDecoder("shift_jis");
+        var csvText = decoder.decode(buffer);
 
-                    var raw_file_race = d[2] ? d[2].toString().toUpperCase().replace(/R/g, "").trim() : "";
-                    var file_race_num = parseInt(raw_file_race, 10) || 0;
-                    var file_race = file_race_num > 0 ? file_race_num + "R" : "";
+        var horses = parseCsvData(csvText, targetFile, cG, cV, cR);
 
-                    var current_row_extracted_id = "日付:" + file_date + " | 競馬場:" + file_venue + " | レース番号:" + file_race;
+        if (!horses || horses.length === 0) {
+            if (btnEl) btnEl.innerText = "🧠 指定レースのデータ検索を実行";
+            showErrorNotice("選択条件 (日付: " + cG + " / 競馬場: " + cV + " / " + cR + "R) に合致する出走馬データが見つかりませんでした。");
+            return;
+        }
 
-                    if (debug_log_count < 3) {
-                        debug_log_count++;
-                        var isMatch = (file_date === cG && file_venue === cV && (file_race === cR || file_race_num === cR_num));
-                        alert("🔍 [デバッグ表示：比較直前の値ガチ検証ログ (" + debug_log_count + "/3行目)]\n" +
-                              "-----------------------------------------\n" +
-                              "①【画面から検索しようとしている対象ID】:\n" +
-                              "   ➔ 「" + generated_search_id + "」\n" +
-                              "②【CSV内データから抽出したID】:\n" +
-                              "   ➔ 「" + current_row_extracted_id + "」\n\n" +
-                              "■ 判定結果: " + (isMatch ? "⭕ 一致！" : "❌ 不一致"));
-                    }
+        renderRaceTable(tbodyEl, horses);
+        updateDashboardComponents(cV, cR, horses);
 
-                    if (file_date === cG && file_venue === cV && (file_race === cR || file_race_num === cR_num)) {
-                        var waku_clean = parseInt(d[3], 10) || 1;
-                        var num_clean = parseInt(d[4], 10) || 1;
-                        var name_clean = d[5] ? d[5].toString().trim() : "不明";
-                        var jockey_clean = d[6] ? d[6].toString().trim() : "不明";
-                        var odds_clean = d[7] ? parseFloat(d[7].toString().replace("倍", "").trim()) : 0.0;
-
-                        matched_horses.push({
-                            waku: waku_clean,
-                            num: num_clean,
-                            name: name_clean,
-                            jockey: jockey_clean,
-                            odds: odds_clean
-                        });
-                    }
-                } catch (e) { continue; }
-            }
-
-            alert("➔ [6/7] [検索結果取得成功] \nデータベースからのスキャンが完了しました。\n■ 一致した競走馬の数: " + matched_horses.length + "頭");
-
-            if (matched_horses.length === 0) {
-                alert("❌ 【デバッグ停止：データ不一致エラー】\n" +
-                      "-----------------------------------------\n" +
-                      "■ サーバー内の全 " + allLines.length + " 行を走査しましたが、一致する馬データが0件でした。\n\n" +
-                      "■ あなたが最後に検索を試みたID:\n" +
-                      "   ➔ 「" + generated_search_id + "」\n\n" +
-                      "💡【原因特定の鍵】:\nさきほど画面に3回飛び出してきた『②CSV内データから抽出したID』の文字の並び（スペースの有無、Rの文字、競馬場名の表記の違いなど）と、画面で選択したIDの違いを教えてください！");
-                if (btn) btn.innerText = "🧠 指定レースのデータ検索を実行";
-                return;
-            }
-
-            matched_horses.sort(function(a, b) { return a.num - b.num; });
-
-            alert("➔ [7/7] [画面へ返却成功] 今からテーブルに出馬表を描き出します！");
-
-            var html = "";
-            for (var j = 0; j < matched_horses.length; j++) {
-                var h = matched_horses[j];
-                var sig = "-";
-                if (parseFloat(h.odds) > 0 && parseFloat(h.odds) <= 3.5) {
-                    sig = "<span style='color:#dc2626;font-weight:bold;'>◎ 本命</span>";
-                }
-                var odds_str = h.odds > 0 ? h.odds + "倍" : "未確定";
-                html += "<tr><td>" + h.waku + "枠" + h.num + "番</td><td>" + sig + "</td><td><b>" + h.name + "</b></td><td>" + h.jockey + "</td><td>" + odds_str + "</td></tr>";
-            }
-
-            var tbody = document.getElementById("predict-tbody") || document.querySelector("tbody");
-            if (tbody) tbody.innerHTML = html;
-
-            alert("🏆 [完全大開通達成！！] すべての工程が1ミリのエラーもなく100%完全に通過しました！！JRA全頭出馬表の大出現です！！！");
-            if (btn) btn.innerText = "🧠 指定レースのデータ検索を実行";
-        })
-        .catch(function(err) {
-            alert("❌ 警告: 処理の途中でプログラムがクラッシュして停止しました。\n■ 原因エラー: " + err.message);
-            if (btn) btn.innerText = "🧠 指定レースのデータ検索を実行";
-        });
+        if (btnEl) btnEl.innerText = "🧠 指定レースのデータ検索を実行";
+    } catch (err) {
+        console.error("データ処理エラー:", err);
+        if (btnEl) btnEl.innerText = "🧠 指定レースのデータ検索を実行";
+        showErrorNotice("処理実行エラー: " + err.message);
+    }
 }
