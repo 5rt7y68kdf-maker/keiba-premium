@@ -1,11 +1,11 @@
-// 🌪️ KUINA AI RACING ANALYTICS - 高精度JRAデータ解析 & 多機能AIシミュレーター統合モデル
+// 🌪️ KUINA AI RACING ANALYTICS - 高精度JRAデータ解析 & 多種馬券同時シミュレーター統合モデル
 
 if (typeof document !== "undefined") {
     var updateHeader = function() {
         var h1El = document.querySelector("h1");
         if (h1El) h1El.innerHTML = "🦅 KUINA AI RACING ANALYTICS";
         var subEl = document.querySelector(".subtitle");
-        if (subEl) subEl.innerHTML = "🔥 競馬データベース完全開通 ＆ KUINA AIリアルタイム展開・資金配分";
+        if (subEl) subEl.innerHTML = "🔥 競馬データベース完全開通 ＆ KUINA AIリアルタイム展開・複数馬券資金配分";
     };
     if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", updateHeader);
@@ -15,21 +15,16 @@ if (typeof document !== "undefined") {
 }
 
 var VENUE_MAPPING = {
-    "東京": { name: "東京", code: "05" },
-    "中山": { name: "中山", code: "06" },
-    "京都": { name: "京都", code: "08" },
-    "阪神": { name: "阪神", code: "09" },
-    "中京": { name: "中京", code: "07" },
-    "新潟": { name: "新潟", code: "04" },
-    "福島": { name: "福島", code: "03" },
-    "小倉": { name: "小倉", code: "10" },
-    "札幌": { name: "札幌", code: "01" },
-    "函館": { name: "函館", code: "02" }
-};
-
-var DAILY_DG_SCHEDULE = {
-    "20261003": { "東京": 1, "京都": 2 },
-    "20261004": { "中山": 1, "京都": 2 }
+    "東京": { name: "東京", code: "05", region: "kanto" },
+    "中山": { name: "中山", code: "06", region: "kanto" },
+    "京都": { name: "京都", code: "08", region: "kansai" },
+    "阪神": { name: "阪神", code: "09", region: "kansai" },
+    "中京": { name: "中京", code: "07", region: "kansai" },
+    "新潟": { name: "新潟", code: "04", region: "kanto" },
+    "福島": { name: "福島", code: "03", region: "kanto" },
+    "小倉": { name: "小倉", code: "10", region: "kansai" },
+    "札幌": { name: "札幌", code: "01", region: "kanto" },
+    "函館": { name: "函館", code: "02", region: "kanto" }
 };
 
 function normalizeVenue(str) {
@@ -65,7 +60,16 @@ function parseRaceNum(str) {
     return m ? parseInt(m[0], 10) : 1;
 }
 
-// CSVパース関数
+// 関東開催 -> ブロック1 (1~12R), 関西開催 -> ブロック2 (13~24R)
+function getDgBlockNumber(venueName) {
+    var vInfo = VENUE_MAPPING[venueName];
+    if (vInfo && vInfo.region === "kansai") {
+        return 2;
+    }
+    return 1;
+}
+
+// CSVパース関数 (DGファイル ＆ 2025-2026.csv 両対応)
 function parseCsvData(csvText, fileName, targetDate, targetVenue, targetRace) {
     var lines = csvText.split("\n");
     var horses = [];
@@ -73,13 +77,8 @@ function parseCsvData(csvText, fileName, targetDate, targetVenue, targetRace) {
     var isDgFile = (fileName.toUpperCase().indexOf("DG") !== -1 || fileName.indexOf("1003") !== -1 || fileName.indexOf("1004") !== -1);
 
     if (isDgFile) {
-        var sched = DAILY_DG_SCHEDULE[targetDate] || {};
-        var block = sched[targetVenue];
-        if (!block) {
-            return { horses: [], venueError: true, heldVenues: Object.keys(sched) };
-        }
-
-        var calcRaceTarget = (block - 1) * 12 + targetRace;
+        var blockNum = getDgBlockNumber(targetVenue);
+        var calcRaceTarget = (blockNum - 1) * 12 + targetRace;
         var currentRace = 1;
         var prevNum = 0;
 
@@ -123,7 +122,7 @@ function parseCsvData(csvText, fileName, targetDate, targetVenue, targetRace) {
             }
         }
     } else {
-        // 2025-2026.csv
+        // 2025-2026.csv 形式
         for (var i = 0; i < lines.length; i++) {
             var line = lines[i].trim();
             if (!line || line.indexOf("日付") !== -1 || line.indexOf("date") !== -1) continue;
@@ -191,10 +190,10 @@ function parseCsvData(csvText, fileName, targetDate, targetVenue, targetRace) {
     }
 
     horses.sort(function(a, b) { return a.num - b.num; });
-    return { horses: horses, venueError: false };
+    return horses;
 }
 
-// テーブル描画機能
+// 出馬表テーブルレンダリング機能
 function renderRaceTable(tbodyEl, horses) {
     if (!tbodyEl) {
         tbodyEl = document.getElementById("predict-tbody") || document.getElementById("tbody");
@@ -231,7 +230,7 @@ function renderRaceTable(tbodyEl, horses) {
     tbodyEl.innerHTML = html;
 }
 
-// 🤖 KUINA AI 推奨買い目カードの生成・描画
+// 🤖 KUINA AI 推奨買い目カード (複数馬券表示)
 function renderAiBetsCard(horses) {
     var card = document.getElementById("ai-bets-recommendation-card");
     if (!card) {
@@ -258,7 +257,7 @@ function renderAiBetsCard(horses) {
 
     var html = "<h3 style='color:#d4af37;margin-top:0;display:flex;align-items:center;gap:8px;'>🤖 KUINA AI 推奨買い目・展開戦略</h3>";
     
-    // 印カード一覧
+    // AI予想印一覧
     html += "<div style='display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px;'>";
     html += "<div style='background:#111;padding:8px;border-radius:6px;border:1px solid #dc2626;'><span style='color:#dc2626;font-weight:bold;'>◎ 本命:</span> " + (honmei ? "<b>" + honmei.num + "番 " + honmei.name + "</b> (" + honmei.odds.toFixed(1) + "倍)" : "-") + "</div>";
     html += "<div style='background:#111;padding:8px;border-radius:6px;border:1px solid #319795;'><span style='color:#319795;font-weight:bold;'>〇 対抗:</span> " + (taikou ? "<b>" + taikou.num + "番 " + taikou.name + "</b> (" + taikou.odds.toFixed(1) + "倍)" : "-") + "</div>";
@@ -268,20 +267,23 @@ function renderAiBetsCard(horses) {
     html += "<div style='background:#111;padding:8px;border-radius:6px;border:1px solid #a855f7;'><span style='color:#a855f7;font-weight:bold;'>△ 連下:</span> " + (renkaNames || "-") + "</div>";
     html += "</div>";
 
-    // 買い目戦略一覧
+    // 複数馬券の同時推奨
     html += "<div style='background:#1c160e;padding:12px;border-radius:8px;border:1px solid #d4af37;font-size:0.88rem;'>";
+    html += "<div style='color:#d4af37;font-weight:bold;margin-bottom:8px;border-bottom:1px solid #333;padding-bottom:4px;'>📊 KUINA AI 複数推奨馬券セット</div>";
     
+    if (honmei) {
+        html += "<div style='margin-bottom:6px;'>🔹 <b>単勝 / 複勝</b>: <span style='color:#38bdf8;font-weight:bold;'>" + honmei.num + "番 " + honmei.name + "</span></div>";
+    }
     if (honmei && taikou) {
-        html += "<div style='margin-bottom:6px;'>🎯 <b>馬連ボックス (3頭)</b>: <span style='color:#f59e0b;font-weight:bold;'>" + honmei.num + " - " + taikou.num + (tanana ? " - " + tanana.num : "") + "</span> (3点)</div>";
+        html += "<div style='margin-bottom:6px;'>🔹 <b>馬連 3頭ボックス</b>: <span style='color:#f59e0b;font-weight:bold;'>" + honmei.num + " - " + taikou.num + (tanana ? " - " + tanana.num : "") + "</span> (3点)</div>";
     }
     if (honmei) {
         var wideTargets = [taikou, tanana].concat(renka).filter(Boolean).map(function(h) { return h.num; }).join(", ");
-        html += "<div style='margin-bottom:6px;'>🎯 <b>ワイド 1頭軸流し</b>: <span style='color:#22c55e;font-weight:bold;'>" + honmei.num + " - " + (wideTargets || "-") + "</span></div>";
+        html += "<div style='margin-bottom:6px;'>🔹 <b>ワイド 1頭軸流し</b>: <span style='color:#22c55e;font-weight:bold;'>" + honmei.num + " - [" + (wideTargets || "-") + "]</span></div>";
     }
     if (honmei && taikou && tanana) {
-        var trioForm = honmei.num + " - " + taikou.num + " - " + tanana.num;
-        if (renka.length > 0) trioForm += ", " + renka.map(function(r){ return r.num; }).join(", ");
-        html += "<div>🎯 <b>3連複 フォーメーション</b>: <span style='color:#ec4899;font-weight:bold;'>" + trioForm + "</span></div>";
+        var trioForm = honmei.num + " - " + taikou.num + " - [" + ([tanana].concat(renka).map(function(r){ return r.num; }).join(", ")) + "]";
+        html += "<div>🔹 <b>3連複 フォーメーション</b>: <span style='color:#ec4899;font-weight:bold;'>" + trioForm + "</span></div>";
     }
 
     html += "</div>";
@@ -289,7 +291,7 @@ function renderAiBetsCard(horses) {
     card.innerHTML = html;
 }
 
-// 💰 資金配分シミュレーター (複数馬券種対応版)
+// 💰 資金配分シミュレーター (複数馬券種同時選択・同時計算対応版)
 function renderFundSimulator(horses) {
     var simCard = document.getElementById("fund-simulator-card");
     if (!simCard) {
@@ -300,24 +302,28 @@ function renderFundSimulator(horses) {
         container.appendChild(simCard);
     }
 
-    var html = "<h3 style='color:#d4af37;margin-top:0;'>💰 ⑥ 資金配分シミュレーター</h3>";
+    var html = "<h3 style='color:#d4af37;margin-top:0;'>💰 ⑥ 資金配分シミュレーター (複数馬券同時計算)</h3>";
     
-    // 馬券種選択 & 総予算
-    html += "<div style='display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px;'>";
-    html += "<div><label style='color:#aaa;font-size:0.85rem;'>馬券種: </label>";
-    html += "<select id='sim-ticket-type' onchange='calculateAllocation()' style='padding:6px;background:#111;color:#fff;border:1px solid #444;border-radius:6px;font-weight:bold;'>";
-    html += "<option value='tansho'>単勝 (1着当て)</option>";
-    html += "<option value='fukusho'>複勝 (2〜3着以内)</option>";
-    html += "<option value='umaren'>馬連ボックス (2頭組み合わせ)</option>";
-    html += "<option value='wide'>ワイドボックス (2頭組み合わせ・3着以内)</option>";
-    html += "<option value='sanrenpuku'>3連複ボックス (3頭組み合わせ)</option>";
-    html += "</select></div>";
+    // 複数馬券チェックボックス一覧
+    html += "<div style='background:#111;padding:10px;border-radius:8px;border:1px solid #333;margin-bottom:12px;text-align:left;'>";
+    html += "<div style='color:#aaa;font-size:0.85rem;margin-bottom:6px;font-weight:bold;'>【対象馬券種を選択 (複数選択可)】:</div>";
+    html += "<div style='display:flex;flex-wrap:wrap;gap:12px;font-size:0.88rem;'>";
+    html += "<label><input type='checkbox' class='sim-type-chk' value='tansho' checked onchange='calculateAllocation()'> 単勝</label>";
+    html += "<label><input type='checkbox' class='sim-type-chk' value='fukusho' onchange='calculateAllocation()'> 複勝</label>";
+    html += "<label><input type='checkbox' class='sim-type-chk' value='umaren' checked onchange='calculateAllocation()'> 馬連ボックス</label>";
+    html += "<label><input type='checkbox' class='sim-type-chk' value='wide' checked onchange='calculateAllocation()'> ワイドボックス</label>";
+    html += "<label><input type='checkbox' class='sim-type-chk' value='sanrenpuku' onchange='calculateAllocation()'> 3連複ボックス</label>";
+    html += "</div></div>";
 
-    html += "<div><label style='color:#aaa;font-size:0.85rem;'>総予算(円): </label>";
-    html += "<input type='number' id='total-budget' value='10000' step='1000' onchange='calculateAllocation()' style='width:100px;padding:6px;background:#111;color:#fff;border:1px solid #444;border-radius:6px;text-align:right;'></div>";
+    // 総予算入力
+    html += "<div style='display:flex;gap:10px;align-items:center;margin-bottom:12px;'>";
+    html += "<label style='color:#aaa;font-size:0.85rem;'>総投資予算(円): </label>";
+    html += "<input type='number' id='total-budget' value='10000' step='1000' onchange='calculateAllocation()' style='width:110px;padding:6px;background:#111;color:#fff;border:1px solid #444;border-radius:6px;text-align:right;font-weight:bold;'>";
     html += "</div>";
 
-    html += "<div style='max-height:220px;overflow-y:auto;background:#111;padding:8px;border-radius:8px;border:1px solid #333;'>";
+    // 対象馬選択リスト
+    html += "<div style='max-height:200px;overflow-y:auto;background:#111;padding:8px;border-radius:8px;border:1px solid #333;text-align:left;'>";
+    html += "<div style='color:#aaa;font-size:0.8rem;margin-bottom:4px;'>【対象馬を選択】:</div>";
     for (var i = 0; i < horses.length; i++) {
         var h = horses[i];
         var checked = (i < 3) ? "checked" : "";
@@ -336,16 +342,21 @@ function renderFundSimulator(horses) {
     calculateAllocation();
 }
 
-// 資金配分リアルタイム計算
+// 資金配分リアルタイム計算 (複数馬券同時計算)
 function calculateAllocation() {
     var budgetEl = document.getElementById("total-budget");
     var totalBudget = budgetEl ? (parseInt(budgetEl.value, 10) || 10000) : 10000;
 
-    var ticketTypeEl = document.getElementById("sim-ticket-type");
-    var ticketType = ticketTypeEl ? ticketTypeEl.value : "tansho";
+    // 選択中の馬券種を取得
+    var typeChks = document.querySelectorAll(".sim-type-chk");
+    var selectedTypes = [];
+    typeChks.forEach(function(c) {
+        if (c.checked) selectedTypes.push(c.value);
+    });
 
+    // 選択中の馬を取得
     var chks = document.querySelectorAll(".sim-horse-chk");
-    var selected = [];
+    var selectedHorses = [];
 
     chks.forEach(function(chk) {
         if (chk.checked) {
@@ -353,7 +364,7 @@ function calculateAllocation() {
             if (odds > 0) {
                 var num = chk.getAttribute("data-num");
                 var name = chk.getAttribute("data-name");
-                selected.push({ num: num, name: name, odds: odds });
+                selectedHorses.push({ num: num, name: name, odds: odds });
             }
         }
     });
@@ -361,53 +372,56 @@ function calculateAllocation() {
     var resEl = document.getElementById("sim-result");
     if (!resEl) return;
 
-    if (selected.length === 0) {
-        resEl.innerHTML = "<span style='color:#888;'>対象の馬を選択してください</span>";
+    if (selectedHorses.length === 0 || selectedTypes.length === 0) {
+        resEl.innerHTML = "<span style='color:#888;'>対象の馬および馬券種を選択してください</span>";
         return;
     }
 
     var combinations = [];
 
-    if (ticketType === "tansho") {
-        selected.forEach(function(s) {
-            combinations.push({ label: s.num + "番 " + s.name, odds: s.odds });
-        });
-    } else if (ticketType === "fukusho") {
-        selected.forEach(function(s) {
-            var estFukusho = Math.max(1.1, (s.odds * 0.35 + 0.8));
-            combinations.push({ label: s.num + "番 " + s.name + " (複勝)", odds: estFukusho });
-        });
-    } else if (ticketType === "umaren" || ticketType === "wide") {
-        if (selected.length < 2) {
-            resEl.innerHTML = "<span style='color:#f87171;'>馬連/ワイドは2頭以上選択してください</span>";
-            return;
-        }
-        for (var i = 0; i < selected.length; i++) {
-            for (var j = i + 1; j < selected.length; j++) {
-                var h1 = selected[i];
-                var h2 = selected[j];
-                var estOdds = (ticketType === "umaren") ? (h1.odds * h2.odds * 0.18 + 2.0) : (h1.odds * h2.odds * 0.08 + 1.5);
-                var labelName = (ticketType === "umaren" ? "馬連 " : "ワイド ") + h1.num + " - " + h2.num + " (" + h1.name + " / " + h2.name + ")";
-                combinations.push({ label: labelName, odds: estOdds });
+    selectedTypes.forEach(function(type) {
+        if (type === "tansho") {
+            selectedHorses.forEach(function(s) {
+                combinations.push({ label: "単勝 " + s.num + "番 " + s.name, odds: s.odds });
+            });
+        } else if (type === "fukusho") {
+            selectedHorses.forEach(function(s) {
+                var estFukusho = Math.max(1.1, (s.odds * 0.35 + 0.8));
+                combinations.push({ label: "複勝 " + s.num + "番 " + s.name, odds: estFukusho });
+            });
+        } else if (type === "umaren" || type === "wide") {
+            if (selectedHorses.length >= 2) {
+                for (var i = 0; i < selectedHorses.length; i++) {
+                    for (var j = i + 1; j < selectedHorses.length; j++) {
+                        var h1 = selectedHorses[i];
+                        var h2 = selectedHorses[j];
+                        var estOdds = (type === "umaren") ? (h1.odds * h2.odds * 0.18 + 2.0) : (h1.odds * h2.odds * 0.08 + 1.5);
+                        var labelName = (type === "umaren" ? "馬連 " : "ワイド ") + h1.num + " - " + h2.num + " (" + h1.name + " / " + h2.name + ")";
+                        combinations.push({ label: labelName, odds: estOdds });
+                    }
+                }
             }
-        }
-    } else if (ticketType === "sanrenpuku") {
-        if (selected.length < 3) {
-            resEl.innerHTML = "<span style='color:#f87171;'>3連複は3頭以上選択してください</span>";
-            return;
-        }
-        for (var i = 0; i < selected.length; i++) {
-            for (var j = i + 1; j < selected.length; j++) {
-                for (var k = j + 1; k < selected.length; k++) {
-                    var h1 = selected[i];
-                    var h2 = selected[j];
-                    var h3 = selected[k];
-                    var estOdds = h1.odds * h2.odds * h3.odds * 0.05 + 5.0;
-                    var labelName = "3連複 " + h1.num + " - " + h2.num + " - " + h3.num;
-                    combinations.push({ label: labelName, odds: estOdds });
+        } else if (type === "sanrenpuku") {
+            if (selectedHorses.length >= 3) {
+                for (var i = 0; i < selectedHorses.length; i++) {
+                    for (var j = i + 1; j < selectedHorses.length; j++) {
+                        for (var k = j + 1; k < selectedHorses.length; k++) {
+                            var h1 = selectedHorses[i];
+                            var h2 = selectedHorses[j];
+                            var h3 = selectedHorses[k];
+                            var estOdds = h1.odds * h2.odds * h3.odds * 0.05 + 5.0;
+                            var labelName = "3連複 " + h1.num + " - " + h2.num + " - " + h3.num;
+                            combinations.push({ label: labelName, odds: estOdds });
+                        }
+                    }
                 }
             }
         }
+    });
+
+    if (combinations.length === 0) {
+        resEl.innerHTML = "<span style='color:#f87171;'>選択した馬券種に必要な馬の頭数をチェックしてください (馬連/ワイドは2頭以上, 3連複は3頭以上)</span>";
+        return;
     }
 
     var invOddsSum = 0;
@@ -420,9 +434,9 @@ function calculateAllocation() {
     var synthOdds = (1.0 / invOddsSum).toFixed(2);
     var expReturn = Math.floor(totalBudget * synthOdds);
 
-    var resHtml = "<b>合成オッズ: <span style='color:#d4af37;font-size:1.1rem;'>" + synthOdds + "倍</span></b>";
-    resHtml += " | 想定払戻: <span style='color:#22c55e;font-weight:bold;'>" + expReturn.toLocaleString() + "円</span><br><br>";
-    resHtml += "<table style='width:100%;font-size:0.8rem;'><tr><th>組合せ</th><th>推定オッズ</th><th>推奨購入額</th><th>想定的中時払戻</th></tr>";
+    var resHtml = "<b>総買い目数: <span style='color:#d4af37;'>" + combinations.length + "点</span> | 合成オッズ: <span style='color:#d4af37;font-size:1.1rem;'>" + synthOdds + "倍</span></b>";
+    resHtml += "<br>想定的中時総払戻: <span style='color:#22c55e;font-weight:bold;font-size:1.05rem;'>" + expReturn.toLocaleString() + "円</span><br><br>";
+    resHtml += "<table style='width:100%;font-size:0.8rem;'><tr><th>点数/組合せ</th><th>推定オッズ</th><th>推奨購入額</th><th>想定的中払戻</th></tr>";
 
     combinations.forEach(function(c) {
         var bet = Math.round((totalBudget * (1.0 / c.odds) / invOddsSum) / 100) * 100;
@@ -499,16 +513,7 @@ async function loadAndUnzipJraDatabase() {
         var decoder = new TextDecoder("shift_jis");
         var csvText = decoder.decode(buffer);
 
-        var parseRes = parseCsvData(csvText, targetFile, cG, cV, cR);
-
-        if (parseRes.venueError) {
-            if (btnEl) btnEl.innerText = "🧠 指定レースのデータ検索を実行";
-            var heldStr = parseRes.heldVenues.map(function(v){ return "「" + v + "」"; }).join("・");
-            showErrorNotice(cG.substring(0,4) + "年" + cG.substring(4,6) + "月" + cG.substring(6) + "日の開催競馬場は " + heldStr + " です。(選択された「" + cV + "」の開催はありません)");
-            return;
-        }
-
-        var horses = parseRes.horses;
+        var horses = parseCsvData(csvText, targetFile, cG, cV, cR);
 
         if (!horses || horses.length === 0) {
             if (btnEl) btnEl.innerText = "🧠 指定レースのデータ検索を実行";
