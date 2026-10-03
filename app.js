@@ -1,5 +1,20 @@
 // 🌪️ KUINA AI RACING ANALYTICS - 高精度JRAデータ解析エンジン & ダッシュボード統合モデル
 
+// KUINA タイトル＆サブタイトル自動適用処理
+if (typeof document !== "undefined") {
+    var updateHeader = function() {
+        var h1El = document.querySelector("h1");
+        if (h1El) h1El.innerHTML = "🦅 KUINA AI RACING ANALYTICS";
+        var subEl = document.querySelector(".subtitle");
+        if (subEl) subEl.innerHTML = "🔥 競馬データベース完全開通 ＆ KUINA AIリアルタイム展開・資金配分";
+    };
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", updateHeader);
+    } else {
+        updateHeader();
+    }
+}
+
 var VENUE_MAPPING = {
     "東京": { name: "東京", code: "05", venueIdx: 1 },
     "中山": { name: "中山", code: "06", venueIdx: 1 },
@@ -53,7 +68,7 @@ function parseCsvData(csvText, fileName, targetDate, targetVenue, targetRace) {
         var prevNum = 0;
 
         for (var i = 0; i < lines.length; i++) {
-            var line = lines[i].strip ? lines[i].strip() : lines[i].trim();
+            var line = lines[i].trim();
             if (!line || line.indexOf("枠番") !== -1) continue;
 
             var parts = line.split(",").map(function(p) { return p.trim(); });
@@ -111,7 +126,6 @@ function parseCsvData(csvText, fileName, targetDate, targetVenue, targetRace) {
             var lineRace = parseRaceNum(tokens[2]);
             if (lineRace !== targetRace) continue;
 
-            // 各列の抽出
             var waku = parseInt(tokens[3], 10) || 1;
             var num = parseInt(tokens[4], 10) || 1;
             var name = tokens[5] || "競走馬";
@@ -147,7 +161,6 @@ function renderRaceTable(tbodyEl, horses) {
     for (var i = 0; i < horses.length; i++) {
         var h = horses[i];
         
-        // AI印の算出
         var aiMark = "-";
         if (h.odds > 0 && h.odds <= 3.5) {
             aiMark = "<span class='badge-win'>◎ 本命</span>";
@@ -161,7 +174,7 @@ function renderRaceTable(tbodyEl, horses) {
 
         var oddsStr = (h.odds > 0) ? h.odds.toFixed(1) + "倍" : "未確定";
 
-        html += "<tr onclick='toggleHorseDetail(" + h.num + ")' style='cursor:pointer;'>";
+        html += "<tr>";
         html += "<td style='font-weight:bold;'>" + h.waku + "枠" + h.num + "番</td>";
         html += "<td>" + aiMark + "</td>";
         html += "<td><b style='color:#fff;font-size:1.02rem;'>" + h.name + "</b><br><small style='color:#888;'>" + h.sex_age + "</small></td>";
@@ -176,7 +189,6 @@ function renderRaceTable(tbodyEl, horses) {
 
 // ダッシュボード・コンポーネント更新機能
 function updateDashboardComponents(venue, raceNum, horses) {
-    // ⑥ 資金配分シミュレーターのレンダリング
     renderFundSimulator(horses);
 }
 
@@ -309,6 +321,12 @@ async function loadAndUnzipJraDatabase() {
         if (!response.ok) {
             var altName = (targetFile === "DG261003.CSV") ? "DG261003.csv" : (targetFile === "DG261004.CSV" ? "DG261004.csv" : "2025-2026.csv");
             response = await fetch(altName, { method: "GET", cache: "no-cache" });
+        }
+
+        // 過去日付フォールバック
+        if (!response.ok && targetFile !== "2025-2026.csv") {
+            response = await fetch("2025-2026.csv", { method: "GET", cache: "no-cache" });
+            targetFile = "2025-2026.csv";
         }
 
         if (!response.ok) {
