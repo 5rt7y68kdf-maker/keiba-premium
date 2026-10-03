@@ -10,7 +10,7 @@ body {
     -webkit-font-smoothing: antialiased;
 }
 
-.container {
+.kuina-app-wrapper {
     max-width: 720px;
     margin: 0 auto;
     background: #141414;
@@ -19,10 +19,16 @@ body {
     border: 1px solid #d4af37;
     box-shadow: 0 10px 35px rgba(212, 175, 55, 0.2);
     box-sizing: border-box;
+    text-align: left;
 }
 
-h1 {
-    font-size: 1.5rem;
+.kuina-header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.kuina-header h1 {
+    font-size: 1.6rem;
     color: #d4af37;
     margin: 0 0 6px 0;
     font-weight: 800;
@@ -30,153 +36,258 @@ h1 {
     text-shadow: 0 2px 10px rgba(212, 175, 55, 0.3);
 }
 
-.subtitle {
-    text-align: center;
+.kuina-header .subtitle {
     font-size: 0.82rem;
     color: #b89628;
-    margin-bottom: 20px;
     font-weight: 600;
 }
 
-.kuina-card {
+.selector-box {
     background: #1a1a1a;
-    border: 1px solid #3d3d3d;
-    border-radius: 12px;
-    padding: 14px;
-    margin-bottom: 16px;
-    text-align: left;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    padding: 18px;
+    border-radius: 14px;
+    border: 1px solid #2d2d2d;
+    box-shadow: inset 0 2px 6px rgba(0,0,0,0.4);
+    margin-bottom: 20px;
 }
 
-.kuina-card h3 {
-    margin: 0 0 10px 0;
-    font-size: 0.95rem;
-    color: #d4af37;
-    border-bottom: 1px solid #333;
-    padding-bottom: 6px;
-}
-
-/* トラックバイアス */
-.bias-controls {
+.form-row {
     display: flex;
-    gap: 15px;
-    margin-bottom: 10px;
-    flex-wrap: wrap;
-}
-
-.bias-controls select {
-    background: #000;
-    color: #fff;
-    border: 1px solid #d4af37;
-    padding: 6px 10px;
-    border-radius: 6px;
-    font-size: 0.85rem;
-    font-weight: bold;
-}
-
-.bias-output-box {
-    background: #211c10;
-    border: 1px solid #d4af37;
-    color: #f59e0b;
-    padding: 10px;
-    border-radius: 8px;
-    font-weight: bold;
-    font-size: 0.88rem;
-}
-
-/* 展開予想 & 隊列マップ */
-.pace-badge {
-    display: inline-block;
-    background: #dc2626;
-    color: #fff;
-    padding: 4px 10px;
-    border-radius: 6px;
-    font-weight: bold;
-    font-size: 0.82rem;
+    gap: 10px;
     margin-bottom: 12px;
 }
 
-.position-map-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
+.form-group {
+    flex: 1;
 }
 
-.pos-group {
-    background: #111;
-    border: 1px solid #2d2d2d;
-    padding: 8px;
-    border-radius: 8px;
-}
-
-.pos-label {
-    font-size: 0.78rem;
+.form-label {
+    display: block;
+    font-size: 0.8rem;
     color: #d4af37;
     font-weight: bold;
     margin-bottom: 6px;
 }
 
-.pos-horses {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 5px;
+.select-input, .text-input {
+    width: 100%;
+    padding: 10px;
+    font-size: 0.95rem;
+    border-radius: 8px;
+    border: 1px solid #3d3d3d;
+    background: #0f0f0f;
+    color: #ffffff;
+    box-sizing: border-box;
+    font-weight: bold;
+    outline: none;
 }
 
-.pos-horse-tag {
-    font-size: 0.72rem;
-    padding: 2px 6px;
-    border-radius: 4px;
+.select-input-sm {
+    padding: 6px 10px;
+    font-size: 0.82rem;
+    border-radius: 6px;
+    border: 1px solid #3d3d3d;
+    background: #0f0f0f;
+    color: #ffffff;
     font-weight: bold;
 }
 
-/* AI推奨買い目 */
-.ai-bets-card {
-    background: linear-gradient(135deg, #1f190e 0%, #121008 100%);
-    border: 1px solid #d4af37;
+.race-nav-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 6px;
+    margin-bottom: 14px;
+}
+
+.race-btn {
+    background: #222;
+    border: 1px solid #3a3a3a;
+    color: #ccc;
+    padding: 8px 0;
+    font-size: 0.85rem;
+    font-weight: bold;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.race-btn:hover, .race-btn.active {
+    background: linear-gradient(135deg, #d4af37 0%, #aa8822 100%);
+    color: #000000;
+    border-color: #ffd700;
+    font-weight: 800;
+    box-shadow: 0 3px 10px rgba(212, 175, 55, 0.4);
+}
+
+.btn-predict {
+    width: 100%;
+    background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+    color: #ffffff;
+    border: 1px solid #ef4444;
+    padding: 14px;
+    font-size: 1.1rem;
+    font-weight: 800;
+    border-radius: 10px;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4);
+    transition: all 0.2s ease;
+    margin-top: 10px;
+}
+
+.btn-predict:hover {
+    background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+}
+
+.bias-card, .pace-card, .ai-bets-card, .sim-card {
+    background: #1a1a1a;
+    border: 1px solid #2d2d2d;
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 16px;
+}
+
+.bias-title, .ai-bets-title, .sim-title {
+    font-size: 0.88rem;
+    color: #d4af37;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.bias-controls {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.bias-output {
+    background: #0f0f0f;
+    border: 1px solid #333;
+    padding: 10px;
+    border-radius: 8px;
+    color: #38bdf8;
+    font-weight: bold;
+    font-size: 0.85rem;
+    text-align: center;
+}
+
+.pace-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    font-weight: bold;
+    font-size: 0.88rem;
+    color: #d4af37;
+}
+
+.pace-badge {
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.78rem;
+    font-weight: bold;
+}
+.pace-mid { background: #d97706; color: #fff; }
+
+.position-map-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+}
+
+.pos-group {
+    background: #0f0f0f;
+    border: 1px solid #2a2a2a;
+    border-radius: 8px;
+    padding: 8px;
+    text-align: center;
+}
+
+.pos-label {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    margin-bottom: 6px;
+    font-weight: bold;
+}
+
+.pos-horses {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    justify-content: center;
+}
+
+.pos-horse-tag {
+    background: #262626;
+    border: 1px solid #404040;
+    color: #f1f5f9;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+}
+
+.ai-bets-content {
+    background: #0f0f0f;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #2a2a2a;
+    font-size: 0.82rem;
+    color: #e2e8f0;
 }
 
 .bet-item {
-    font-size: 0.88rem;
-    padding: 6px 0;
-    border-bottom: 1px solid #2a2215;
-    color: #f1f5f9;
+    margin-bottom: 4px;
 }
 
-.bet-item:last-child {
-    border-bottom: none;
+.race-summary-header {
+    background: #211c10;
+    border: 1px solid #d4af37;
+    padding: 10px 14px;
+    border-radius: 10px;
+    margin-bottom: 12px;
+    color: #d4af37;
+    font-weight: bold;
+    font-size: 0.9rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
-/* 資金配分シミュレーター */
-.sim-card {
-    background: #151515;
-    border: 1px solid #2d2d2d;
-}
-
-.sim-result-box {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
+.sort-box {
+    display: flex;
+    justify-content: center;
     gap: 8px;
-    background: #0a0a0a;
-    padding: 12px;
-    border-radius: 8px;
-    border: 1px solid #333;
-    margin-top: 10px;
-    font-size: 0.82rem;
+    margin-bottom: 12px;
 }
 
-/* Table Style */
+.sort-btn {
+    background: #1a1a1a;
+    border: 1px solid #3a3a3a;
+    color: #aaaaaa;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.sort-btn.active {
+    background: #d4af37;
+    color: #000000;
+    font-weight: 800;
+}
+
 .table-wrapper {
     overflow-x: auto;
     border-radius: 12px;
     border: 1px solid #2d2d2d;
     background: #111111;
-    margin-top: 10px;
+    margin-bottom: 16px;
 }
 
 table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.82rem;
+    font-size: 0.85rem;
     color: #e2e8f0;
     table-layout: fixed;
 }
@@ -186,7 +297,7 @@ th, td {
     border: 1px solid #262626;
     text-align: center;
     vertical-align: middle;
-    word-break: break-word;
+    word-break: break-all;
 }
 
 th {
@@ -194,31 +305,23 @@ th {
     color: #d4af37;
     font-weight: 800;
     font-size: 0.8rem;
-    border-bottom: 2px solid #3d3d3d;
-    white-space: nowrap;
 }
 
-tr.horse-row {
-    cursor: pointer;
-    transition: background 0.2s ease;
-}
-
-tr.horse-row:hover {
+.horse-row:hover {
     background-color: #221e14;
+    cursor: pointer;
 }
 
-/* 枠色バッジ */
 .waku-badge {
     display: inline-block;
-    padding: 3px 6px;
-    border-radius: 5px;
+    padding: 2px 6px;
+    border-radius: 4px;
     font-size: 0.75rem;
     font-weight: 800;
-    white-space: nowrap;
 }
 
-.waku-1 { background: #f8fafc; color: #0f172a; border: 1px solid #cbd5e1; }
-.waku-2 { background: #1e293b; color: #f8fafc; border: 1px solid #475569; }
+.waku-1 { background: #f8fafc; color: #0f172a; }
+.waku-2 { background: #1e293b; color: #f8fafc; }
 .waku-3 { background: #dc2626; color: #ffffff; }
 .waku-4 { background: #2563eb; color: #ffffff; }
 .waku-5 { background: #eab308; color: #0f172a; }
@@ -226,101 +329,33 @@ tr.horse-row:hover {
 .waku-7 { background: #ea580c; color: #ffffff; }
 .waku-8 { background: #ec4899; color: #ffffff; }
 
-/* AIバッジ */
 .ai-badge {
     display: inline-block;
     padding: 2px 6px;
     border-radius: 4px;
-    font-size: 0.72rem;
+    font-size: 0.75rem;
     font-weight: 800;
 }
 
-.ai-honmei { background: linear-gradient(135deg, #dc2626, #b91c1c); color: #ffffff; }
+.ai-honmei { background: #dc2626; color: #ffffff; }
 .ai-taikou { background: #2563eb; color: #ffffff; }
 .ai-tanana { background: #d97706; color: #ffffff; }
 .ai-ana    { background: #7c3aed; color: #ffffff; }
 .ai-renka  { background: #059669; color: #ffffff; }
 .ai-none   { color: #64748b; }
 
-.horse-name {
-    font-size: 0.88rem;
-    font-weight: 800;
-    color: #ffffff;
-    display: block;
-}
+.horse-name { font-size: 0.9rem; font-weight: 800; color: #ffffff; }
+.sub-info { font-size: 0.7rem; color: #94a3b8; }
+.jockey-name { font-weight: 600; color: #f1f5f9; }
+.trainer-name { font-size: 0.78rem; color: #cbd5e1; }
+.odds-val { font-weight: 800; color: #f59e0b; }
+.pop-rank { font-size: 0.7rem; color: #94a3b8; }
 
-.sub-info {
-    font-size: 0.68rem;
-    color: #94a3b8;
-}
+.detail-row { background: #181611; }
+.detail-card-inner { padding: 12px; text-align: left; }
+.detail-card-inner h4 { margin: 0 0 8px 0; color: #d4af37; font-size: 0.88rem; }
+.detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 0.78rem; margin-bottom: 8px; }
+.detail-ai-comment { background: #0f0f0f; padding: 8px; border-radius: 6px; font-size: 0.78rem; color: #e2e8f0; }
 
-.jockey-name {
-    font-weight: 600;
-    color: #f1f5f9;
-}
-
-.trainer-name {
-    font-size: 0.75rem;
-    color: #cbd5e1;
-}
-
-.odds-val {
-    font-weight: 800;
-    color: #f59e0b;
-    font-size: 0.88rem;
-}
-
-.pop-rank {
-    font-size: 0.65rem;
-    color: #94a3b8;
-}
-
-/* アコーディオン詳細カード */
-.detail-card-inner {
-    background: #0d0d0d;
-    border: 1px solid #d4af37;
-    border-radius: 8px;
-    padding: 10px;
-    margin: 6px;
-    text-align: left;
-}
-
-.detail-card-inner h4 {
-    margin: 0 0 8px 0;
-    color: #d4af37;
-    font-size: 0.88rem;
-}
-
-.detail-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 6px;
-    font-size: 0.78rem;
-    color: #cbd5e1;
-}
-
-/* ソートボックス */
-.sort-box {
-    display: flex;
-    justify-content: center;
-    gap: 8px;
-    margin: 14px 0 10px 0;
-}
-
-.sort-btn {
-    background: #1a1a1a;
-    border: 1px solid #3a3a3a;
-    color: #aaaaaa;
-    padding: 6px 12px;
-    border-radius: 16px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    cursor: pointer;
-}
-
-.sort-btn.active {
-    background: #d4af37;
-    color: #000000;
-    border-color: #ffd700;
-    font-weight: 800;
-}
+.sim-input-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.sim-result-box { background: #0f0f0f; padding: 10px; border-radius: 8px; border: 1px solid #2a2a2a; font-size: 0.82rem; }
