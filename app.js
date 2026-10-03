@@ -1,4 +1,4 @@
-// 🌪️ KUINA AI RACING ANALYTICS - 高精度JRAデータ解析 & 多種馬券(3連単マルチ対応)同時シミュレーター統合モデル
+// 🌪️ KUINA AI RACING ANALYTICS - 高精度JRAデータ解析 & 多種馬券(3連単マルチ対応)統合モデル
 
 if (typeof document !== "undefined") {
     var updateHeader = function() {
@@ -57,7 +57,7 @@ function normalizeDateStr(str) {
 function parseRaceNum(str) {
     if (!str) return 1;
     var m = str.toString().match(/\d+/);
-    return m ? parseInt(m, 10) : 1;
+    return m ? parseInt(m[0], 10) : 1;
 }
 
 function getDgBlockNumber(venueName) {
@@ -192,25 +192,35 @@ function parseCsvData(csvText, fileName, targetDate, targetVenue, targetRace) {
     return horses;
 }
 
-// 出馬表テーブル描画機能
+// 出馬表テーブル描画機能 (1番人気に必ず◎本命が付く相対順位判定版)
 function renderRaceTable(tbodyEl, horses) {
     if (!tbodyEl) {
         tbodyEl = document.getElementById("predict-tbody") || document.getElementById("tbody");
     }
     if (!tbodyEl) return;
 
+    // オッズが有効な馬をオッズ昇順（人気の高い順）にソートして順位マップを作成
+    var sorted = horses.slice().filter(function(h) { return h.odds > 0; });
+    sorted.sort(function(a, b) { return a.odds - b.odds; });
+
+    var rankMap = {};
+    for (var r = 0; r < sorted.length; r++) {
+        rankMap[sorted[r].num] = r + 1;
+    }
+
     var html = "";
     for (var i = 0; i < horses.length; i++) {
         var h = horses[i];
+        var rank = (sorted.length > 0) ? (rankMap[h.num] || 99) : (i + 1);
         
         var aiMark = "-";
-        if (h.odds > 0 && h.odds <= 3.5) {
+        if (rank === 1) {
             aiMark = "<span class='badge-win'>◎ 本命</span>";
-        } else if (h.odds > 3.5 && h.odds <= 7.0) {
+        } else if (rank === 2) {
             aiMark = "<span class='badge-place'>〇 対抗</span>";
-        } else if (h.odds > 7.0 && h.odds <= 12.0) {
+        } else if (rank === 3) {
             aiMark = "<span style='color:#d4af37;font-weight:bold;'>▲ 単穴</span>";
-        } else if (h.odds > 12.0 && h.odds <= 20.0) {
+        } else if (rank >= 4 && rank <= 6 && (h.odds <= 30.0 || h.odds === 0)) {
             aiMark = "<span style='color:#a855f7;font-weight:bold;'>△ 連下</span>";
         }
 
@@ -248,6 +258,7 @@ function renderAiBetsCard(horses) {
 
     var valid = horses.filter(function(h) { return h.odds > 0; });
     valid.sort(function(a, b) { return a.odds - b.odds; });
+    if (valid.length === 0) valid = horses;
 
     var honmei = valid[0] || null;
     var taikou = valid[1] || null;
@@ -258,9 +269,9 @@ function renderAiBetsCard(horses) {
     
     // AI予想印一覧
     html += "<div style='display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px;'>";
-    html += "<div style='background:#111;padding:8px;border-radius:6px;border:1px solid #dc2626;'><span style='color:#dc2626;font-weight:bold;'>◎ 本命:</span> " + (honmei ? "<b>" + honmei.num + "番 " + honmei.name + "</b> (" + honmei.odds.toFixed(1) + "倍)" : "-") + "</div>";
-    html += "<div style='background:#111;padding:8px;border-radius:6px;border:1px solid #319795;'><span style='color:#319795;font-weight:bold;'>〇 対抗:</span> " + (taikou ? "<b>" + taikou.num + "番 " + taikou.name + "</b> (" + taikou.odds.toFixed(1) + "倍)" : "-") + "</div>";
-    html += "<div style='background:#111;padding:8px;border-radius:6px;border:1px solid #d4af37;'><span style='color:#d4af37;font-weight:bold;'>▲ 単穴:</span> " + (tanana ? "<b>" + tanana.num + "番 " + tanana.name + "</b> (" + tanana.odds.toFixed(1) + "倍)" : "-") + "</div>";
+    html += "<div style='background:#111;padding:8px;border-radius:6px;border:1px solid #dc2626;'><span style='color:#dc2626;font-weight:bold;'>◎ 本命:</span> " + (honmei ? "<b>" + honmei.num + "番 " + honmei.name + "</b> (" + (honmei.odds > 0 ? honmei.odds.toFixed(1) + "倍" : "未確定") + ")" : "-") + "</div>";
+    html += "<div style='background:#111;padding:8px;border-radius:6px;border:1px solid #319795;'><span style='color:#319795;font-weight:bold;'>〇 対抗:</span> " + (taikou ? "<b>" + taikou.num + "番 " + taikou.name + "</b> (" + (taikou.odds > 0 ? taikou.odds.toFixed(1) + "倍" : "未確定") + ")" : "-") + "</div>";
+    html += "<div style='background:#111;padding:8px;border-radius:6px;border:1px solid #d4af37;'><span style='color:#d4af37;font-weight:bold;'>▲ 単穴:</span> " + (tanana ? "<b>" + tanana.num + "番 " + tanana.name + "</b> (" + (tanana.odds > 0 ? tanana.odds.toFixed(1) + "倍" : "未確定") + ")" : "-") + "</div>";
     
     var renkaNames = renka.map(function(r) { return r.num + "番 " + r.name; }).join(", ");
     html += "<div style='background:#111;padding:8px;border-radius:6px;border:1px solid #a855f7;'><span style='color:#a855f7;font-weight:bold;'>△ 連下:</span> " + (renkaNames || "-") + "</div>";
@@ -271,21 +282,22 @@ function renderAiBetsCard(horses) {
     html += "<div style='color:#d4af37;font-weight:bold;margin-bottom:8px;border-bottom:1px solid #333;padding-bottom:4px;'>📊 KUINA AI 複数推奨馬券セット</div>";
     
     if (honmei) {
-        html += "<div style='margin-bottom:6px;'>🔹 <b>単勝 / 複勝</b>: <span style='color:#38bdf8;font-weight:bold;'>" + honmei.num + "番 " + honmei.name + "</span></div>";
+        html += "<div style='margin-bottom:6px;'>🔹 <b>単勝 / 複勝</b>: <span style='color:#38bdf8;font-weight:bold;font-size:0.95rem;'>" + honmei.num + "番 " + honmei.name + "</span></div>";
     }
     if (honmei && taikou) {
-        html += "<div style='margin-bottom:6px;'>🔹 <b>馬連 3頭ボックス</b>: <span style='color:#f59e0b;font-weight:bold;'>" + honmei.num + " - " + taikou.num + (tanana ? " - " + tanana.num : "") + "</span> (3点)</div>";
+        html += "<div style='margin-bottom:6px;'>🔹 <b>馬連 3頭ボックス</b>: <span style='color:#f59e0b;font-weight:bold;font-size:0.95rem;'>" + honmei.num + " - " + taikou.num + (tanana ? " - " + tanana.num : "") + "</span> (3点)</div>";
     }
     if (honmei) {
         var wideTargets = [taikou, tanana].concat(renka).filter(Boolean).map(function(h) { return h.num; }).join(", ");
-        html += "<div style='margin-bottom:6px;'>🔹 <b>ワイド 1頭軸流し</b>: <span style='color:#22c55e;font-weight:bold;'>" + honmei.num + " - [" + (wideTargets || "-") + "]</span></div>";
+        html += "<div style='margin-bottom:6px;'>🔹 <b>ワイド 1頭軸流し</b>: <span style='color:#22c55e;font-weight:bold;font-size:0.95rem;'>" + honmei.num + " - [" + (wideTargets || "-") + "]</span></div>";
     }
     if (honmei && taikou && tanana) {
         var trioForm = honmei.num + " - " + taikou.num + " - [" + ([tanana].concat(renka).map(function(r){ return r.num; }).join(", ")) + "]";
-        html += "<div style='margin-bottom:6px;'>🔹 <b>3連複 フォーメーション</b>: <span style='color:#ec4899;font-weight:bold;'>" + trioForm + "</span></div>";
+        html += "<div style='margin-bottom:6px;'>🔹 <b>3連複 フォーメーション</b>: <span style='color:#ec4899;font-weight:bold;font-size:0.95rem;'>" + trioForm + "</span></div>";
     }
     if (honmei && taikou && tanana) {
-        html += "<div>🔥 <b>3連単 軸1頭マルチ</b>: <span style='color:#e11d48;font-weight:bold;'>軸: " + honmei.num + "番 ➔ 相手: [" + taikou.num + ", " + tanana.num + (renka[0] ? ", " + renka[0].num : "") + "] (マルチ)</span></div>";
+        var aiteNums = [taikou.num, tanana.num].concat(renka.map(function(r){ return r.num; })).join(", ");
+        html += "<div>🔥 <b>3連単 軸1頭マルチ</b>: <span style='color:#e11d48;font-weight:bold;font-size:0.95rem;'>軸: " + honmei.num + "番 ➔ 相手: [" + aiteNums + "] (マルチ)</span></div>";
     }
 
     html += "</div>";
@@ -293,7 +305,7 @@ function renderAiBetsCard(horses) {
     card.innerHTML = html;
 }
 
-// 💰 資金配分シミュレーター (複数馬券・3連単マルチ対応版)
+// 💰 資金配分シミュレーター (複数馬券＆3連単マルチ対応)
 function renderFundSimulator(horses) {
     var simCard = document.getElementById("fund-simulator-card");
     if (!simCard) {
