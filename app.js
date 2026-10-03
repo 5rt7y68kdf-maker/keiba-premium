@@ -16,7 +16,6 @@ var ACTIVE_TAB_ID = 'race-card-tab';
 
         var container = document.querySelector('.container') || document.body;
         
-        // タブナビゲーションの作成
         var existingNav = document.getElementById('kuina-tab-nav');
         if (!existingNav) {
             var nav = document.createElement('div');
@@ -37,9 +36,7 @@ var ACTIVE_TAB_ID = 'race-card-tab';
             }
         }
 
-        // 各タブ用コンテナの準備
         ensureTabContainers();
-        // 初期状態の表示制御
         switchKuinaTab('race-card-tab');
     }
 
@@ -52,11 +49,10 @@ var ACTIVE_TAB_ID = 'race-card-tab';
     }
 })();
 
-// 各タブ用コンテナの準備
 function ensureTabContainers() {
+    if (typeof document === 'undefined') return;
     var container = document.querySelector('.container') || document.body;
 
-    // AIコラムカード
     if (!document.getElementById('kuina-ai-column-card')) {
         var colCard = document.createElement('div');
         colCard.id = 'kuina-ai-column-card';
@@ -66,7 +62,6 @@ function ensureTabContainers() {
         container.appendChild(colCard);
     }
 
-    // 過去データベースカード
     if (!document.getElementById('kuina-db-archive-card')) {
         var dbCard = document.createElement('div');
         dbCard.id = 'kuina-db-archive-card';
@@ -77,12 +72,10 @@ function ensureTabContainers() {
     }
 }
 
-// タブ切り替え処理（完全分離）
 function switchKuinaTab(tabId) {
     if (typeof document === 'undefined') return;
     ACTIVE_TAB_ID = tabId;
 
-    // ボタンのactiveクラス切り替え
     var btns = document.querySelectorAll('.kuina-tab-btn');
     btns.forEach(function(b) { b.classList.remove('active'); });
 
@@ -90,7 +83,6 @@ function switchKuinaTab(tabId) {
     var activeBtn = document.getElementById(activeBtnId);
     if (activeBtn) activeBtn.classList.add('active');
 
-    // 要素取得
     var tbodyEl = document.getElementById('predict-tbody') || document.getElementById('tbody');
     var cardTable = tbodyEl ? tbodyEl.closest('table') : document.querySelector('table');
     var simCard = document.getElementById('fund-simulator-card');
@@ -98,7 +90,6 @@ function switchKuinaTab(tabId) {
     var colCard = document.getElementById('kuina-ai-column-card');
     var dbCard = document.getElementById('kuina-db-archive-card');
 
-    // 画面切り替えの可視化制御
     if (tabId === 'race-card-tab') {
         if (cardTable) cardTable.style.display = '';
         if (aiCard) aiCard.style.display = (CURRENT_HORSES_DATA.length > 0) ? 'block' : 'none';
@@ -139,8 +130,7 @@ function normalizeVenue(str) {
     for (var v in VENUE_MAPPING) {
         if (s.indexOf(v) !== -1) return v;
     }
-    if (s.indexOf('中京') !== -1) return '中京';
-    if (s.indexOf('中') !== -1) return '中山';
+    if (s.indexOf('中京') !== -1 || s.indexOf('中') !== -1) return (s.indexOf('中山') !== -1 || (s.indexOf('中') !== -1 && s.indexOf('京') === -1)) ? '中山' : '中京';
     if (s.indexOf('東') !== -1) return '東京';
     if (s.indexOf('京') !== -1) return '京都';
     if (s.indexOf('阪') !== -1) return '阪神';
@@ -163,7 +153,7 @@ function normalizeDateStr(str) {
 function parseRaceNum(str) {
     if (!str) return 1;
     var m = str.toString().match(/\d+/);
-    return m ? parseInt(m, 10) : 1;
+    return m ? parseInt(m[0], 10) : 1;
 }
 
 function getDgBlockNumber(venueName) {
@@ -262,7 +252,7 @@ function parseCsvData(csvText, fileName, targetDate, targetVenue, targetRace) {
             if (lineDate.length === 6) lineDate = '20' + lineDate;
             if (lineDate !== targetDate) continue;
 
-            var lineVenue = normalizeVenue(tokens[1]) || normalizeVenue(tokens[2]);
+            var lineVenue = normalizeVenue(tokens[1]) || normalizeVenue(tokens[0]);
             if (lineVenue !== targetVenue) continue;
 
             var lineRace = parseRaceNum(tokens[2]) || parseRaceNum(tokens[1]);
